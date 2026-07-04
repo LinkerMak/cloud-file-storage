@@ -1,9 +1,14 @@
-package com.linkermak.cloud_file_storage.models;
+package com.linkermak.cloud_file_storage.security.models;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "users")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
 
     @Id
@@ -16,4 +21,9 @@ public class User {
 
     @Column(name = "password_hash", nullable = false, length = 100)
     private String passwordHash;
+
+    public User(String username, String passwordHash) {
+        this.username = username;
+        this.passwordHash = passwordHash;
+    }
 }

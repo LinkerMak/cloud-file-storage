@@ -2,9 +2,7 @@ package com.linkermak.cloud_file_storage.security.repositories;
 
 import com.linkermak.cloud_file_storage.security.config.SessionProperties;
 import com.linkermak.cloud_file_storage.security.dto.UserSession;
-import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -38,7 +36,7 @@ public class RedisSessionRepository {
         return uuid;
     }
 
-    public Optional<UserSession> findByUUId(String sessionUUID) {
+    public Optional<UserSession> findById(String sessionUUID) {
         return Optional.ofNullable(
                 redisTemplate.opsForValue().get(KEY_PREFIX + sessionUUID));
     }

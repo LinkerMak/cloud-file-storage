@@ -1,8 +1,8 @@
 package com.linkermak.cloud_file_storage.security.exceptions;
 
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -33,10 +33,17 @@ public class SecurityControllerAdvice {
                 .body(Map.of("message", e.getMessage()));
     }
 
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<Map<String, String>> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<Map<String, String>> handleUsernameNotFoundException(AuthenticationException e) {
         return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(Map.of("message", "Data integrity violation"));
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("message", "Invalid username or password"));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, String>> handleSimpleException(Exception e) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("message", e.getMessage()));
     }
 }

@@ -13,6 +13,7 @@ public class UserSession implements Serializable {
     private Long userId;
     @Getter
     private String username;
+    @Getter
     private List<String> authorities;
     private Instant createdAt;
 }

@@ -6,6 +6,8 @@ import com.linkermak.cloud_file_storage.security.dto.SignUpRequest;
 import com.linkermak.cloud_file_storage.security.models.User;
 import com.linkermak.cloud_file_storage.security.services.UserAuthenticationService;
 import com.linkermak.cloud_file_storage.security.services.UserRegisterService;
+import com.linkermak.cloud_file_storage.security.utils.CookieValueExtractor;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,10 +15,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
 import java.util.Map;
@@ -24,8 +24,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
-
-    private final static String SESSION_COOKIE_NAME = "SESSION_ID";
 
     private final UserRegisterService userRegisterService;
     private final UserAuthenticationService userAuthenticationService;
@@ -61,11 +59,34 @@ public class AuthController {
 
     private ResponseCookie collectCookie(String sessionId) {
         return ResponseCookie
-                .from(SESSION_COOKIE_NAME, sessionId)
+                .from(sessionProperties.getSessionCookieName(), sessionId)
                 .httpOnly(true)
                 .path("/")
                 .maxAge(Duration.ofMinutes(sessionProperties.getTtlMinutes()))
                 .sameSite("Lax")
                 .build();
+    }
+
+    @PostMapping("/sign-out")
+    public ResponseEntity<Void> logout(HttpServletRequest request,
+                                       HttpServletResponse response) {
+        String sessionId = CookieValueExtractor.
+                extract(request, sessionProperties.getSessionCookieName())
+                .orElseThrow(() -> new AuthenticationCredentialsNotFoundException("Unauthorized"));
+
+        userAuthenticationService.logout(sessionId);
+        clearSessionCookie(response);
+        return ResponseEntity.noContent().build();
+    }
+
+    private void clearSessionCookie(HttpServletResponse response) {
+        response.addHeader(HttpHeaders.SET_COOKIE, ResponseCookie
+                .from(sessionProperties.getSessionCookieName())
+                .httpOnly(true)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax")
+                .build().toString());
+
     }
 }

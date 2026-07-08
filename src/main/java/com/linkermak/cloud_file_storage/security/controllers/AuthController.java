@@ -16,10 +16,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -38,8 +40,18 @@ public class AuthController {
     }
 
     @PostMapping("/sign-up")
-    public ResponseEntity<Map<String, String>> register(@Valid @RequestBody SignUpRequest request) {
-        User user = userRegisterService.register(request);
+    public ResponseEntity<Map<String, String>> register(@Valid @RequestBody SignUpRequest signUpRequest,
+                                                        HttpServletRequest servletRequest,
+                                                        HttpServletResponse servletResponse) {
+        User user = userRegisterService.register(signUpRequest);
+
+        Optional<String> sessionId = CookieValueExtractor.
+                extract(servletRequest, sessionProperties.getSessionCookieName());
+
+        if(sessionId.isPresent()) {
+            userAuthenticationService.deleteSession(sessionId.get());
+            clearSessionCookie(servletResponse);
+        }
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -74,7 +86,8 @@ public class AuthController {
                 extract(request, sessionProperties.getSessionCookieName())
                 .orElseThrow(() -> new AuthenticationCredentialsNotFoundException("Unauthorized"));
 
-        userAuthenticationService.logout(sessionId);
+        userAuthenticationService.deleteSession(sessionId);
+        SecurityContextHolder.clearContext();
         clearSessionCookie(response);
         return ResponseEntity.noContent().build();
     }

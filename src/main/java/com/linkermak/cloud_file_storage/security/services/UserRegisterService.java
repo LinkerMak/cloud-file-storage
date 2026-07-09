@@ -1,6 +1,6 @@
 package com.linkermak.cloud_file_storage.security.services;
 
-import com.linkermak.cloud_file_storage.security.dto.SignUpRequest;
+import com.linkermak.cloud_file_storage.security.dto.signrequest.SignUpRequest;
 import com.linkermak.cloud_file_storage.security.exceptions.UserAlreadyExistsException;
 import com.linkermak.cloud_file_storage.security.models.User;
 import com.linkermak.cloud_file_storage.security.repositories.UserRepository;

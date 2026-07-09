@@ -1,7 +1,7 @@
 package com.linkermak.cloud_file_storage.security.services;
 
-import com.linkermak.cloud_file_storage.security.dto.SignInRequest;
 import com.linkermak.cloud_file_storage.security.dto.UserSession;
+import com.linkermak.cloud_file_storage.security.dto.signrequest.SignRequest;
 import com.linkermak.cloud_file_storage.security.repositories.RedisSessionRepository;
 import com.linkermak.cloud_file_storage.security.services.userdetails.UserDetailsImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +25,7 @@ public class UserAuthenticationService {
         this.authenticationManager = authenticationManager;
     }
 
-    public LoginResult login(SignInRequest request) {
+    public LoginResult login(SignRequest request) {
         Authentication unAuth = UsernamePasswordAuthenticationToken
                 .unauthenticated(request.getUsername(),request.getPassword());
 

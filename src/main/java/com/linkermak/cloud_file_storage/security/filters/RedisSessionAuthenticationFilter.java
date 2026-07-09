@@ -2,7 +2,9 @@ package com.linkermak.cloud_file_storage.security.filters;
 
 import com.linkermak.cloud_file_storage.security.config.SessionProperties;
 import com.linkermak.cloud_file_storage.security.dto.UserSession;
+import com.linkermak.cloud_file_storage.security.models.User;
 import com.linkermak.cloud_file_storage.security.repositories.RedisSessionRepository;
+import com.linkermak.cloud_file_storage.security.services.userdetails.UserDetailsImpl;
 import com.linkermak.cloud_file_storage.security.utils.CookieValueExtractor;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -79,7 +81,9 @@ public class RedisSessionAuthenticationFilter extends OncePerRequestFilter {
                 .toList();
 
         return new UsernamePasswordAuthenticationToken(
-                userSession.getUsername(),
+                new UserDetailsImpl(
+                        new User(userSession.getUsername(),"")
+                ),
                 null,
                 roles
         );

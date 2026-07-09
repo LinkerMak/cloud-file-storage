@@ -1,9 +1,8 @@
 package com.linkermak.cloud_file_storage.security.controllers;
 
 import com.linkermak.cloud_file_storage.security.config.SessionProperties;
-import com.linkermak.cloud_file_storage.security.dto.SignInRequest;
-import com.linkermak.cloud_file_storage.security.dto.SignUpRequest;
-import com.linkermak.cloud_file_storage.security.models.User;
+import com.linkermak.cloud_file_storage.security.dto.signrequest.SignInRequest;
+import com.linkermak.cloud_file_storage.security.dto.signrequest.SignUpRequest;
 import com.linkermak.cloud_file_storage.security.services.UserAuthenticationService;
 import com.linkermak.cloud_file_storage.security.services.UserRegisterService;
 import com.linkermak.cloud_file_storage.security.utils.CookieValueExtractor;
@@ -43,40 +42,28 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> register(@Valid @RequestBody SignUpRequest signUpRequest,
                                                         HttpServletRequest servletRequest,
                                                         HttpServletResponse servletResponse) {
-        User user = userRegisterService.register(signUpRequest);
-
-        Optional<String> sessionId = CookieValueExtractor.
+        Optional<String> oldSessionId = CookieValueExtractor.
                 extract(servletRequest, sessionProperties.getSessionCookieName());
 
-        if(sessionId.isPresent()) {
-            userAuthenticationService.deleteSession(sessionId.get());
-            clearSessionCookie(servletResponse);
-        }
+        userRegisterService.register(signUpRequest);
+        UserAuthenticationService.LoginResult loginResult = userAuthenticationService.login(signUpRequest);
+        addSessionCookie(loginResult.sessionId(), servletResponse);
+
+        oldSessionId.ifPresent(id -> userAuthenticationService.deleteSession(id));
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(Map.of("username", user.getUsername()));
+                .body(Map.of("username", loginResult.username()));
     }
 
     @PostMapping("/sign-in")
     public ResponseEntity<Map<String, String>> login(@Valid @RequestBody SignInRequest request, HttpServletResponse response) {
         UserAuthenticationService.LoginResult loginResult = userAuthenticationService.login(request);
-
-        response.addHeader(HttpHeaders.SET_COOKIE, collectCookie(loginResult.sessionId()).toString());
+        addSessionCookie(loginResult.sessionId(), response);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(Map.of("username", loginResult.username()));
-    }
-
-    private ResponseCookie collectCookie(String sessionId) {
-        return ResponseCookie
-                .from(sessionProperties.getSessionCookieName(), sessionId)
-                .httpOnly(true)
-                .path("/")
-                .maxAge(Duration.ofMinutes(sessionProperties.getTtlMinutes()))
-                .sameSite("Lax")
-                .build();
     }
 
     @PostMapping("/sign-out")
@@ -90,6 +77,16 @@ public class AuthController {
         SecurityContextHolder.clearContext();
         clearSessionCookie(response);
         return ResponseEntity.noContent().build();
+    }
+
+    private void addSessionCookie(String sessionId, HttpServletResponse response) {
+        response.addHeader(HttpHeaders.SET_COOKIE, ResponseCookie
+                .from(sessionProperties.getSessionCookieName(), sessionId)
+                .httpOnly(true)
+                .path("/")
+                .maxAge(Duration.ofMinutes(sessionProperties.getTtlMinutes()))
+                .sameSite("Lax")
+                .build().toString());
     }
 
     private void clearSessionCookie(HttpServletResponse response) {

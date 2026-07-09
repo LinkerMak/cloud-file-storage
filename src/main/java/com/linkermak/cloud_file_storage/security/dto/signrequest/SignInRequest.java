@@ -1,10 +1,10 @@
-package com.linkermak.cloud_file_storage.security.dto;
+package com.linkermak.cloud_file_storage.security.dto.signrequest;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 
 @Getter
-public class SignInRequest {
+public class SignInRequest implements SignRequest {
 
     @NotBlank(message = "Username is required")
     private String username;

@@ -1,4 +1,4 @@
-package com.linkermak.cloud_file_storage.security.dto;
+package com.linkermak.cloud_file_storage.security.dto.signrequest;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 
 @Getter
-public class SignUpRequest {
+public class SignUpRequest implements SignRequest {
 
     public static final String USERNAME_PATTERN = "^[a-zA-Z0-9]+[a-zA-Z_0-9]*[a-zA-Z0-9]+$";
 

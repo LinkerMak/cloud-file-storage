@@ -82,7 +82,9 @@ public class RedisSessionAuthenticationFilter extends OncePerRequestFilter {
 
         return new UsernamePasswordAuthenticationToken(
                 new UserDetailsImpl(
-                        new User(userSession.getUsername(),"")
+                        new User(userSession.getUserId(),
+                                userSession.getUsername(),
+                                "")
                 ),
                 null,
                 roles

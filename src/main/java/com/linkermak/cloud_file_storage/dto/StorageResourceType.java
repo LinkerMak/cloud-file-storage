@@ -1,4 +1,4 @@
-package com.linkermak.cloud_file_storage.models;
+package com.linkermak.cloud_file_storage.dto;
 
 public enum StorageResourceType {
     DIRECTORY,

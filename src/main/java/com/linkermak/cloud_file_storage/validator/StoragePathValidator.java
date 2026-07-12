@@ -1,12 +1,11 @@
 package com.linkermak.cloud_file_storage.validator;
 
 import com.linkermak.cloud_file_storage.exceptions.InvalidPathException;
-import org.springframework.stereotype.Component;
 
-@Component
-public class StoragePathValidator {
+public final class StoragePathValidator {
 
-    public String validateFilePath(String path) {
+    private StoragePathValidator() {}
+    public static String validateFilePath(String path) {
         String normalized = normalize(path);
 
         if (normalized.endsWith("/")) {
@@ -16,7 +15,7 @@ public class StoragePathValidator {
         return normalized;
     }
 
-    public String validateDirectoryPath(String path) {
+    public static String validateDirectoryPath(String path) {
         String normalized = normalize(path);
 
         if (!normalized.endsWith("/")) {
@@ -26,11 +25,11 @@ public class StoragePathValidator {
         return normalized;
     }
 
-    public String validateResourcePath(String path) {
+    public static String validateResourcePath(String path) {
         return normalize(path);
     }
 
-    private String normalize(String path) {
+    private static String normalize(String path) {
         if (path == null) {
             throw new InvalidPathException("Path is null");
         }

@@ -28,7 +28,7 @@ public class MinioBucketInitializer {
                         .build()
         );
 
-        if(exists) {
+        if(!exists) {
             minioClient.makeBucket(
                     MakeBucketArgs.builder()
                             .bucket(minioProperties.getBucket())

@@ -1,6 +1,6 @@
 package com.linkermak.cloud_file_storage.security.exceptions;
 
-import com.linkermak.cloud_file_storage.security.dto.response.ExceptionResponse;
+import com.linkermak.cloud_file_storage.dto.ExceptionResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
@@ -40,11 +40,4 @@ public class SecurityControllerAdvice {
                 .body(new ExceptionResponse("Invalid username or password"));
     }
 
-    //TODO: "Unknown Error"
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ExceptionResponse> handleSimpleException(Exception e) {
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ExceptionResponse(e.getMessage()));
-    }
 }

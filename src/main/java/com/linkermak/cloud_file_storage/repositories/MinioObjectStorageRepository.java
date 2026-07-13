@@ -55,11 +55,7 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository{
                             .build()
             );
 
-            if(results.iterator().hasNext()) {
-                return true;
-            }
-
-            return false;
+            return results.iterator().hasNext();
         } catch(Exception e) {
             throw new StorageException("Failed to check object existence:" + key, e);
         }

@@ -22,15 +22,15 @@ public class FilesControllerAdvice {
                 .body(new ExceptionResponse(e.getMessage()));
     }
 
-    @ExceptionHandler(DirectoryNotFoundException.class)
-    ResponseEntity<ExceptionResponse> directoryNotFoundHandler(DirectoryNotFoundException e) {
+    @ExceptionHandler(ResourceNotFoundException.class)
+    ResponseEntity<ExceptionResponse> directoryNotFoundHandler(ResourceNotFoundException e) {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(new ExceptionResponse(e.getMessage()));
     }
 
-    @ExceptionHandler(DirectoryAlreadyExistsException.class)
-    ResponseEntity<ExceptionResponse> directoryAlreadyExistsHandler(DirectoryAlreadyExistsException e) {
+    @ExceptionHandler(ResourceAlreadyExistsException.class)
+    ResponseEntity<ExceptionResponse> directoryAlreadyExistsHandler(ResourceAlreadyExistsException e) {
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
                 .body(new ExceptionResponse(e.getMessage()));

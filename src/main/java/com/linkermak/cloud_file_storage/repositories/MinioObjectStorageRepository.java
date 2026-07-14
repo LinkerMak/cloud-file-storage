@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 @Repository
 public class MinioObjectStorageRepository implements ObjectStorageRepository{
@@ -20,6 +22,37 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository{
     public MinioObjectStorageRepository(MinioClient minioClient, MinioProperties properties) {
         this.minioClient = minioClient;
         this.bucket = properties.getBucket();
+    }
+
+    @Override
+    public List<StorageObjectInfo> findResourcesByPrefix(Long userId, String path) {
+        String key = pathToKey(userId, path);
+        try{
+            Iterable<Result<Item>> results = minioClient.listObjects(
+                    ListObjectsArgs.builder()
+                            .bucket(bucket)
+                            .prefix(key)
+                            .recursive(false)
+                            .build()
+            );
+
+            List<StorageObjectInfo> resources = new ArrayList<>();
+            for(Result<Item> result : results) {
+                Item item = result.get();
+
+                if(item.objectName().equals(key)) {
+                    continue;
+                }
+
+                String objectKey = item.objectName();
+                String relativeKey = objectKey.substring(userRootPrefix(userId).length());
+                resources.add(new StorageObjectInfo(relativeKey, item.size()));
+            }
+
+            return resources;
+        } catch(Exception e) {
+            throw new StorageException("Failed to find resources  by path:" + path, e);
+        }
     }
 
     @Override

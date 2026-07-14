@@ -4,9 +4,15 @@ import com.linkermak.cloud_file_storage.exceptions.InvalidPathException;
 
 public final class StoragePathValidator {
 
-    private StoragePathValidator() {}
+    private StoragePathValidator() {
+    }
+
     public static String validateFilePath(String path) {
-        String normalized = normalize(path);
+        String normalized = normalize(path, true);
+
+        if (normalized.isEmpty()) {
+            throw new InvalidPathException("File path must not be empty");
+        }
 
         if (normalized.endsWith("/")) {
             throw new InvalidPathException("File path must not end with '/'");
@@ -16,7 +22,11 @@ public final class StoragePathValidator {
     }
 
     public static String validateDirectoryPath(String path) {
-        String normalized = normalize(path);
+        String normalized = normalize(path, true);
+
+        if (normalized.isEmpty()) {
+            return "";
+        }
 
         if (!normalized.endsWith("/")) {
             throw new InvalidPathException("Directory path must end with '/'");
@@ -26,10 +36,10 @@ public final class StoragePathValidator {
     }
 
     public static String validateResourcePath(String path) {
-        return normalize(path);
+        return normalize(path, false);
     }
 
-    private static String normalize(String path) {
+    private static String normalize(String path, boolean allowEmpty) {
         if (path == null) {
             throw new InvalidPathException("Path is null");
         }
@@ -37,6 +47,9 @@ public final class StoragePathValidator {
         String normalized = path.trim();
 
         if (normalized.isEmpty()) {
+            if (allowEmpty) {
+                return "";
+            }
             throw new InvalidPathException("Path is empty");
         }
 
@@ -59,12 +72,12 @@ public final class StoragePathValidator {
         String[] segments = normalized.split("/");
 
         for (String segment : segments) {
-            if (segment.equals(".") || segment.equals("..")) {
-                throw new InvalidPathException("Path must not contain '.' or '..' segments");
+            if (segment.isEmpty()) {
+                continue;
             }
 
-            if (segment.isBlank()) {
-                throw new InvalidPathException("Path contains empty segment");
+            if (segment.equals(".") || segment.equals("..")) {
+                throw new InvalidPathException("Path must not contain '.' or '..' segments");
             }
         }
 

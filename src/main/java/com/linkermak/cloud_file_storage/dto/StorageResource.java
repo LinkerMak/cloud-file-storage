@@ -10,6 +10,6 @@ import lombok.Getter;
 public class StorageResource {
     private String path;
     private String name;
-    private Integer size;
+    private Long size;
     private StorageResourceType type;
 }

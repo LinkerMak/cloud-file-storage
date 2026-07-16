@@ -1,11 +1,10 @@
 package com.linkermak.cloud_file_storage.repositories;
 
-import com.linkermak.cloud_file_storage.config.minio.MinioProperties;
+import com.linkermak.cloud_file_storage.config.properties.MinioProperties;
 import com.linkermak.cloud_file_storage.exceptions.StorageException;
 import io.minio.*;
 import io.minio.errors.ErrorResponseException;
 import io.minio.messages.Item;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.io.ByteArrayInputStream;
@@ -13,12 +12,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Repository
-public class MinioObjectStorageRepository implements ObjectStorageRepository{
+public class MinioObjectStorageRepository implements ObjectStorageRepository {
 
     private final MinioClient minioClient;
     private final String bucket;
 
-    @Autowired
     public MinioObjectStorageRepository(MinioClient minioClient, MinioProperties properties) {
         this.minioClient = minioClient;
         this.bucket = properties.getBucket();
@@ -27,7 +25,7 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository{
     @Override
     public List<StorageObjectInfo> findResourcesByPrefix(Long userId, String path) {
         String key = pathToKey(userId, path);
-        try{
+        try {
             Iterable<Result<Item>> results = minioClient.listObjects(
                     ListObjectsArgs.builder()
                             .bucket(bucket)
@@ -37,10 +35,10 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository{
             );
 
             List<StorageObjectInfo> resources = new ArrayList<>();
-            for(Result<Item> result : results) {
+            for (Result<Item> result : results) {
                 Item item = result.get();
 
-                if(item.objectName().equals(key)) {
+                if (item.objectName().equals(key)) {
                     continue;
                 }
 
@@ -50,7 +48,7 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository{
             }
 
             return resources;
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new StorageException("Failed to find resources  by path:" + path, e);
         }
     }
@@ -65,7 +63,7 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository{
                             .stream(new ByteArrayInputStream(new byte[0]), 0L, -1L)
                             .build()
             );
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new StorageException("Failed to create directory", e);
         }
     }
@@ -74,11 +72,11 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository{
     public boolean existsDirectory(Long id, String directoryPath) {
         String key = pathToKey(id, directoryPath);
 
-        if(objectExists(key)) {
+        if (objectExists(key)) {
             return true;
         }
 
-        try{
+        try {
             Iterable<Result<Item>> results = minioClient.listObjects(
                     ListObjectsArgs.builder()
                             .bucket(bucket)
@@ -89,13 +87,13 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository{
             );
 
             return results.iterator().hasNext();
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new StorageException("Failed to check object existence:" + key, e);
         }
     }
 
     private boolean objectExists(String key) {
-        try{
+        try {
             minioClient.statObject(
                     StatObjectArgs.builder()
                             .bucket(bucket)
@@ -103,12 +101,12 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository{
                             .build()
             );
             return true;
-        } catch(ErrorResponseException e) {
-            if("NoSuchKey".equals(e.errorResponse().code())) {
+        } catch (ErrorResponseException e) {
+            if ("NoSuchKey".equals(e.errorResponse().code())) {
                 return false;
             }
             throw new StorageException("Failed to check object existence:" + key, e);
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new StorageException("Failed to check object existence:" + key, e);
         }
     }

@@ -1,5 +1,6 @@
 package com.linkermak.cloud_file_storage.config.minio;
 
+import com.linkermak.cloud_file_storage.config.properties.MinioProperties;
 import io.minio.MinioClient;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;

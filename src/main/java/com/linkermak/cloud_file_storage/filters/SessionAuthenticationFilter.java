@@ -2,8 +2,9 @@ package com.linkermak.cloud_file_storage.filters;
 
 import com.linkermak.cloud_file_storage.config.properties.SessionProperties;
 import com.linkermak.cloud_file_storage.dto.authentication.UserSession;
+import com.linkermak.cloud_file_storage.exceptions.session.SessionAuthenticationException;
 import com.linkermak.cloud_file_storage.models.User;
-import com.linkermak.cloud_file_storage.repositories.session.RedisSessionRepository;
+import com.linkermak.cloud_file_storage.repositories.session.SessionRepository;
 import com.linkermak.cloud_file_storage.services.authentication.userdetails.UserDetailsImpl;
 import com.linkermak.cloud_file_storage.utils.CookieValueExtractor;
 import jakarta.servlet.FilterChain;
@@ -19,11 +20,12 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
 
-public class RedisSessionAuthenticationFilter extends OncePerRequestFilter {
+public class SessionAuthenticationFilter extends OncePerRequestFilter {
 
     private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
 
@@ -38,11 +40,11 @@ public class RedisSessionAuthenticationFilter extends OncePerRequestFilter {
             "/error"
     );
 
-    private final RedisSessionRepository redisSessionRepository;
+    private final SessionRepository sessionRepository;
     private final SessionProperties sessionProperties;
 
-    public RedisSessionAuthenticationFilter(RedisSessionRepository redisSessionRepository, SessionProperties sessionProperties) {
-        this.redisSessionRepository = redisSessionRepository;
+    public SessionAuthenticationFilter(SessionRepository sessionRepository, SessionProperties sessionProperties) {
+        this.sessionRepository = sessionRepository;
         this.sessionProperties = sessionProperties;
     }
 
@@ -63,11 +65,12 @@ public class RedisSessionAuthenticationFilter extends OncePerRequestFilter {
                 extract(request, sessionProperties.getSessionCookieName());
 
         if (sessionId.isPresent()) {
-            Optional<UserSession> userSession = redisSessionRepository.findById(sessionId.get());
+            Optional<UserSession> userSession = sessionRepository.findById(sessionId.get());
 
             if (userSession.isPresent()) {
                 Authentication auth = buildAuthentication(userSession.get());
                 SecurityContextHolder.getContext().setAuthentication(auth);
+                refreshSessionTTL(sessionId.get());
             }
         }
 
@@ -91,4 +94,14 @@ public class RedisSessionAuthenticationFilter extends OncePerRequestFilter {
         );
     }
 
+    private void refreshSessionTTL(String sessionUUID) {
+        try {
+            Duration ttl = sessionRepository.getRemainingTTL(sessionUUID);
+            if (ttl.compareTo(Duration.ofMinutes(sessionProperties.getTtlRefreshThreshold())) < 0) {
+                sessionRepository.refreshTTL(sessionUUID);
+            }
+        } catch(IllegalStateException e) {
+            throw new SessionAuthenticationException(e.getMessage(), e.getCause());
+        }
+    }
 }

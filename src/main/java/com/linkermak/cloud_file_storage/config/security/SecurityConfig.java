@@ -1,8 +1,8 @@
 package com.linkermak.cloud_file_storage.config.security;
 
 import com.linkermak.cloud_file_storage.config.properties.SessionProperties;
-import com.linkermak.cloud_file_storage.filters.RedisSessionAuthenticationFilter;
-import com.linkermak.cloud_file_storage.repositories.session.RedisSessionRepository;
+import com.linkermak.cloud_file_storage.filters.SessionAuthenticationFilter;
+import com.linkermak.cloud_file_storage.repositories.session.SessionRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,7 +23,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                                   RedisSessionAuthenticationFilter redisSessionAuthenticationFilter,
+                                                   SessionAuthenticationFilter redisSessionAuthenticationFilter,
                                                    AuthenticationEntryPoint authenticationEntryPoint) throws Exception {
         configureStatelessSecurity(http);
         configureSessionFilter(http, redisSessionAuthenticationFilter);
@@ -46,10 +46,10 @@ public class SecurityConfig {
                 );
     }
 
-    private void configureSessionFilter(HttpSecurity http, RedisSessionAuthenticationFilter redisSessionAuthenticationFilter) {
+    private void configureSessionFilter(HttpSecurity http, SessionAuthenticationFilter sessionAuthenticationFilter) {
         http
                 .addFilterAfter(
-                        redisSessionAuthenticationFilter,
+                        sessionAuthenticationFilter,
                         SecurityContextHolderFilter.class);
     }
 
@@ -82,12 +82,12 @@ public class SecurityConfig {
     }
 
     @Bean
-    RedisSessionAuthenticationFilter redisSessionAuthenticationFilter(
-            RedisSessionRepository redisSessionRepository,
+    SessionAuthenticationFilter sessionAuthenticationFilter(
+            SessionRepository sessionRepository,
             SessionProperties sessionProperties
     ) {
-        return new RedisSessionAuthenticationFilter(
-                redisSessionRepository,
+        return new SessionAuthenticationFilter(
+                sessionRepository,
                 sessionProperties);
     }
 

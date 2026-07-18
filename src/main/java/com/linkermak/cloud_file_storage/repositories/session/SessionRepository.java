@@ -2,6 +2,7 @@ package com.linkermak.cloud_file_storage.repositories.session;
 
 import com.linkermak.cloud_file_storage.dto.authentication.UserSession;
 
+import java.time.Duration;
 import java.util.Optional;
 
 public interface SessionRepository {
@@ -11,6 +12,8 @@ public interface SessionRepository {
     Optional<UserSession> findById(String sessionUUID);
 
     void delete(String sessionUUID);
+
+    Duration getRemainingTTL(String sessionUUID);
 
     void refreshTTL(String sessionUUID);
 

@@ -1,4 +1,4 @@
-package com.linkermak.cloud_file_storage.exceptions.security;
+package com.linkermak.cloud_file_storage.exceptions.login;
 
 import com.linkermak.cloud_file_storage.dto.ExceptionResponse;
 import lombok.extern.slf4j.Slf4j;

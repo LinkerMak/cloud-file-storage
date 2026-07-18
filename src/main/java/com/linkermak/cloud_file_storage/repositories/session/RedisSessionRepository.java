@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Repository
 @RequiredArgsConstructor
@@ -41,6 +42,21 @@ public class RedisSessionRepository implements SessionRepository {
     @Override
     public void delete(String sessionUUID) {
         redisTemplate.delete(KEY_PREFIX + sessionUUID);
+    }
+
+    @Override
+    public Duration getRemainingTTL(String sessionUUID) {
+        Long ttlMinutes = redisTemplate.getExpire(KEY_PREFIX + sessionUUID, TimeUnit.MINUTES);
+
+        if(ttlMinutes == null) {
+            throw new IllegalStateException("Session TTL is unavailable");
+        }
+
+        if(ttlMinutes < 0) {
+            throw new IllegalStateException("Invalid session TTL:" + ttlMinutes);
+        }
+
+        return Duration.ofMinutes(ttlMinutes);
     }
 
     @Override

@@ -11,5 +11,6 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "spring.redis.session")
 public class SessionProperties {
     private long ttlMinutes = 30;
+    private long ttlRefreshThreshold = 5;
     private String sessionCookieName = "SESSION_ID";
 }

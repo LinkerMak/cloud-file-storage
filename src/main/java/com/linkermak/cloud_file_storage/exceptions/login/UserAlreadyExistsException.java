@@ -1,4 +1,4 @@
-package com.linkermak.cloud_file_storage.exceptions.security;
+package com.linkermak.cloud_file_storage.exceptions.login;
 
 public class UserAlreadyExistsException extends RuntimeException {
     public UserAlreadyExistsException(String message) {

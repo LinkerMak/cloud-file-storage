@@ -1,5 +1,6 @@
-package com.linkermak.cloud_file_storage.services;
+package com.linkermak.cloud_file_storage.services.directory;
 
+import com.linkermak.cloud_file_storage.config.security.CurrentUserProvider;
 import com.linkermak.cloud_file_storage.dto.StorageResource;
 import com.linkermak.cloud_file_storage.dto.StorageResourceType;
 import com.linkermak.cloud_file_storage.exceptions.ResourceAlreadyExistsException;
@@ -24,12 +25,13 @@ public class DirectoryServiceImpl implements DirectoryService {
 
     private final ObjectStorageRepository storageRepository;
 
+    private final CurrentUserProvider userProvider;
+
     @Override
     public List<StorageResource> getResourcesByPath(String pathDirectory) {
-        String normalizePath = StoragePathNormalizer.normalizeDirectoryPath(pathDirectory);
-        StoragePathValidator.validateDirectoryPath(normalizePath);
+        String normalizePath = prepareDirectoryPath(pathDirectory);
 
-        Long userId = currentUserId();
+        Long userId = userProvider.currentUserId();
 
         if (!storageRepository.existsDirectory(userId, normalizePath)) {
             throw new ResourceNotFoundException("Directory not found by path:" + normalizePath);
@@ -65,10 +67,9 @@ public class DirectoryServiceImpl implements DirectoryService {
     @Override
     @Transactional
     public StorageResource createDirectory(String pathDirectory) {
-        String normalizePath = StoragePathNormalizer.normalizeDirectoryPath(pathDirectory);
-        StoragePathValidator.validateDirectoryPath(normalizePath);
+        String normalizePath = prepareDirectoryPath(pathDirectory);
 
-        Long userId = currentUserId();
+        Long userId = userProvider.currentUserId();
         Optional<String> parentPath = extractParentPath(normalizePath);
 
         if (parentPath.isPresent()
@@ -89,16 +90,15 @@ public class DirectoryServiceImpl implements DirectoryService {
         );
     }
 
-    private Long currentUserId() {
-        Object principal = SecurityContextHolder.getContext()
-                .getAuthentication().getPrincipal();
-
-        if (principal instanceof UserDetailsImpl userDetails) {
-            return userDetails.getUserId();
+    @Override
+    public void validateDirectoryExists(String pathDirectory) {
+        String normalizePath = prepareDirectoryPath(pathDirectory);
+        if(!storageRepository.existsDirectory(userProvider.currentUserId(), normalizePath)) {
+            throw new ResourceNotFoundException("Directory not found");
         }
-
-        throw new IllegalStateException("Unsupported authentication principal");
     }
+
+
 
     private Optional<String> extractParentPath(String path) {
         String withoutTrailingSlash = pathWithoutTrailingSlash(path);
@@ -128,6 +128,12 @@ public class DirectoryServiceImpl implements DirectoryService {
         }
 
         return path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
+    }
+
+    private String prepareDirectoryPath(String pathDirectory) {
+        String normalizePath = StoragePathNormalizer.normalizeDirectoryPath(pathDirectory);
+        StoragePathValidator.validateDirectoryPath(normalizePath);
+        return normalizePath;
     }
 
 }

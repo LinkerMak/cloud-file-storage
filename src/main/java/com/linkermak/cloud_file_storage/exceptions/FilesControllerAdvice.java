@@ -1,6 +1,9 @@
 package com.linkermak.cloud_file_storage.exceptions;
 
 import com.linkermak.cloud_file_storage.dto.ExceptionResponse;
+import com.linkermak.cloud_file_storage.exceptions.loader.DuplicateUploadResourceException;
+import com.linkermak.cloud_file_storage.exceptions.loader.MultipartFileEmptyException;
+import com.linkermak.cloud_file_storage.exceptions.loader.OriginalFileNameEmptyException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,36 +14,57 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class FilesControllerAdvice {
 
-    @ExceptionHandler(InvalidPathException.class)
-    ResponseEntity<ExceptionResponse> invalidPathHandler(InvalidPathException e) {
-        log.error(e.getMessage(), e);
+    @ExceptionHandler(DuplicateUploadResourceException.class)
+    public ResponseEntity<ExceptionResponse> DuplicateUploadResourceHandler(DuplicateUploadResourceException e) {
+        errorLogConsoleOutput(e);
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ExceptionResponse(e.getMessage()));
+    }
 
+    @ExceptionHandler(MultipartFileEmptyException.class)
+    public ResponseEntity<ExceptionResponse> multipartFileEmptyHandler(MultipartFileEmptyException e) {
+        errorLogConsoleOutput(e);
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ExceptionResponse(e.getMessage()));
+    }
+
+    @ExceptionHandler(OriginalFileNameEmptyException.class)
+    ResponseEntity<ExceptionResponse> originalFileNameEmptyHandler(OriginalFileNameEmptyException e) {
+        errorLogConsoleOutput(e);
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ExceptionResponse(e.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidPathException.class)
+    public ResponseEntity<ExceptionResponse> invalidPathHandler(InvalidPathException e) {
+        errorLogConsoleOutput(e);
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new ExceptionResponse(e.getMessage()));
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    ResponseEntity<ExceptionResponse> directoryNotFoundHandler(ResourceNotFoundException e) {
-        log.error(e.getMessage(), e);
-
+    public ResponseEntity<ExceptionResponse> directoryNotFoundHandler(ResourceNotFoundException e) {
+        errorLogConsoleOutput(e);
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(new ExceptionResponse("Directory not found"));
     }
 
     @ExceptionHandler(ResourceAlreadyExistsException.class)
-    ResponseEntity<ExceptionResponse> directoryAlreadyExistsHandler(ResourceAlreadyExistsException e) {
-        log.error(e.getMessage(), e);
-
+    public ResponseEntity<ExceptionResponse> directoryAlreadyExistsHandler(ResourceAlreadyExistsException e) {
+        errorLogConsoleOutput(e);
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
                 .body(new ExceptionResponse("Directory already exists"));
     }
 
     @ExceptionHandler(StorageException.class)
-    ResponseEntity<ExceptionResponse> storageHandler(StorageException e) {
-        log.error(e.getMessage(), e);
+    public ResponseEntity<ExceptionResponse> storageHandler(StorageException e) {
+        errorLogConsoleOutput(e);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ExceptionResponse("Storage error"));
@@ -48,9 +72,13 @@ public class FilesControllerAdvice {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ExceptionResponse> handleSimpleException(Exception e) {
-        log.error(e.getMessage(), e);
+        errorLogConsoleOutput(e);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ExceptionResponse("Unknown error"));
+    }
+    
+    private void errorLogConsoleOutput(Exception e) {
+        log.error("Error:reason = {}, message = {}", e, e.getMessage());
     }
 }

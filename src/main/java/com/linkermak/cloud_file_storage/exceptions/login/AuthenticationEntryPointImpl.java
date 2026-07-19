@@ -20,7 +20,7 @@ public class AuthenticationEntryPointImpl implements AuthenticationEntryPoint {
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
-        log.error("Unauthorized request: method = {}, uri = {}, reason = {}, message = {}",
+        log.warn("Unauthorized request: method = {}, uri = {}, reason = {}, message = {}",
                 request.getMethod(),
                 request.getRequestURI(),
                 authException.getClass().getSimpleName(),

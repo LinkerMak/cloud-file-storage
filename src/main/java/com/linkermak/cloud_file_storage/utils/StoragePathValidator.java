@@ -8,6 +8,10 @@ public final class StoragePathValidator {
     }
 
     public static void validateFilePath(String path) {
+        if (path.isBlank()) {
+            throw new InvalidPathException("Directory path must end with '/'");
+        }
+
         if (path.endsWith("/")) {
             throw new InvalidPathException("File path must not end with '/'");
         }
@@ -25,7 +29,7 @@ public final class StoragePathValidator {
         validate(path);
     }
 
-    public static void validate(String path) {
+    private static void validate(String path) {
         if (path.contains("\\")) {
             throw new InvalidPathException("Path must contain only '/' as separator");
         }
@@ -45,6 +49,7 @@ public final class StoragePathValidator {
         String[] segments = path.split("/");
 
         for (String segment : segments) {
+            // TODO: возможно лучше isBlank(), надо потестить
             if (segment.isEmpty()) {
                 continue;
             }

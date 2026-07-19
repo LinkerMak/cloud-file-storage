@@ -69,6 +69,12 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository {
     }
 
     @Override
+    public boolean existsFile(Long userId, String filePath) {
+        String key = pathToKey(userId, filePath);
+        return objectExists(key);
+    }
+
+    @Override
     public boolean existsDirectory(Long id, String directoryPath) {
         String key = pathToKey(id, directoryPath);
 

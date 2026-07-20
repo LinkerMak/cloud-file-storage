@@ -1,6 +1,6 @@
 package com.linkermak.cloud_file_storage.exceptions.login;
 
-import com.linkermak.cloud_file_storage.dto.ExceptionResponse;
+import com.linkermak.cloud_file_storage.dto.web.exception.ExceptionResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,8 +22,7 @@ public class SecurityControllerAdvice {
                 ? fieldError.getDefaultMessage()
                 : "Validation exception";
 
-
-        log.error(e.getMessage(), e);
+        log.warn(e.getMessage(), e);
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
@@ -32,7 +31,7 @@ public class SecurityControllerAdvice {
 
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<ExceptionResponse> handelUserAlreadyExistsException(UserAlreadyExistsException e) {
-        log.error(e.getMessage(), e);
+        log.warn(e.getMessage(), e);
 
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
@@ -41,7 +40,7 @@ public class SecurityControllerAdvice {
 
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ExceptionResponse> handleAuthenticationException(AuthenticationException e) {
-        log.error(e.getMessage(), e);
+        log.warn(e.getMessage(), e);
 
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)

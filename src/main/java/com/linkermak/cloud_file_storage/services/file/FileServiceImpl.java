@@ -2,10 +2,8 @@ package com.linkermak.cloud_file_storage.services.file;
 
 import com.linkermak.cloud_file_storage.config.security.CurrentUserProvider;
 import com.linkermak.cloud_file_storage.exceptions.ResourceAlreadyExistsException;
-import com.linkermak.cloud_file_storage.repositories.ObjectStorageRepository;
-import com.linkermak.cloud_file_storage.services.authentication.userdetails.UserDetailsImpl;
+import com.linkermak.cloud_file_storage.repositories.storage.ObjectStorageRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service

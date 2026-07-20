@@ -1,6 +1,6 @@
 package com.linkermak.cloud_file_storage.services.directory;
 
-import com.linkermak.cloud_file_storage.dto.StorageResource;
+import com.linkermak.cloud_file_storage.dto.web.controller.StorageResource;
 
 import java.util.List;
 

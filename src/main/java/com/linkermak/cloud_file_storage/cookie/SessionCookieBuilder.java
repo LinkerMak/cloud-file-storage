@@ -18,7 +18,7 @@ public class SessionCookieBuilder {
                 .from(sessionProperties.getSessionCookieName(), sessionId)
                 .httpOnly(true)
                 .path("/")
-                .maxAge(Duration.ofMinutes(sessionProperties.getTtlMinutes()))
+                .maxAge(Duration.ofSeconds(sessionProperties.getTtlSeconds()))
                 .sameSite("Lax")
                 .build().toString();
     }

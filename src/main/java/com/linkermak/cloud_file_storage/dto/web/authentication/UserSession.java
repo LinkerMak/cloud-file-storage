@@ -1,4 +1,4 @@
-package com.linkermak.cloud_file_storage.dto.authentication;
+package com.linkermak.cloud_file_storage.dto.web.authentication;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

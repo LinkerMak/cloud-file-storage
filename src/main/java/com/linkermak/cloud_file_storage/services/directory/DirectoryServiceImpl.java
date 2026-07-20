@@ -1,18 +1,17 @@
 package com.linkermak.cloud_file_storage.services.directory;
 
 import com.linkermak.cloud_file_storage.config.security.CurrentUserProvider;
-import com.linkermak.cloud_file_storage.dto.StorageResource;
-import com.linkermak.cloud_file_storage.dto.StorageResourceType;
+import com.linkermak.cloud_file_storage.dto.web.controller.StorageResource;
+import com.linkermak.cloud_file_storage.dto.web.controller.StorageResourceType;
 import com.linkermak.cloud_file_storage.exceptions.ResourceAlreadyExistsException;
 import com.linkermak.cloud_file_storage.exceptions.ResourceNotFoundException;
-import com.linkermak.cloud_file_storage.repositories.ObjectStorageRepository;
-import com.linkermak.cloud_file_storage.repositories.StorageObjectInfo;
-import com.linkermak.cloud_file_storage.services.authentication.userdetails.UserDetailsImpl;
+import com.linkermak.cloud_file_storage.repositories.storage.ObjectStorageRepository;
+import com.linkermak.cloud_file_storage.dto.storage.StorageObjectInfo;
 import com.linkermak.cloud_file_storage.utils.StoragePathNormalizer;
+import com.linkermak.cloud_file_storage.utils.StoragePathUtils;
 import com.linkermak.cloud_file_storage.utils.StoragePathValidator;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -52,8 +51,8 @@ public class DirectoryServiceImpl implements DirectoryService {
 
             storageResources.add(
                     new StorageResource(
-                            extractParentPath(key).orElse(""),
-                            extractLastPath(key),
+                            StoragePathUtils.extractParentPath(key).orElse(""),
+                            StoragePathUtils.extractLastPath(key),
                             isDirectory ? null : resourceInfo.size(),
                             isDirectory ? StorageResourceType.DIRECTORY : StorageResourceType.FILE
                     )
@@ -70,7 +69,7 @@ public class DirectoryServiceImpl implements DirectoryService {
         String normalizePath = prepareDirectoryPath(pathDirectory);
 
         Long userId = userProvider.currentUserId();
-        Optional<String> parentPath = extractParentPath(normalizePath);
+        Optional<String> parentPath = StoragePathUtils.extractParentPath(normalizePath);
 
         if (parentPath.isPresent()
                 && !storageRepository.existsDirectory(userId, parentPath.get())) {
@@ -84,7 +83,7 @@ public class DirectoryServiceImpl implements DirectoryService {
         storageRepository.createDirectory(userId, normalizePath);
         return new StorageResource(
                 parentPath.orElse(""),
-                extractLastPath(normalizePath),
+                StoragePathUtils.extractLastPath(normalizePath),
                 null,
                 StorageResourceType.DIRECTORY
         );
@@ -96,38 +95,6 @@ public class DirectoryServiceImpl implements DirectoryService {
         if(!storageRepository.existsDirectory(userProvider.currentUserId(), normalizePath)) {
             throw new ResourceNotFoundException("Directory not found");
         }
-    }
-
-
-
-    private Optional<String> extractParentPath(String path) {
-        String withoutTrailingSlash = pathWithoutTrailingSlash(path);
-        int lastSlash = withoutTrailingSlash.lastIndexOf("/");
-
-        if (lastSlash < 0) {
-            return Optional.empty();
-        }
-
-        return Optional.of(withoutTrailingSlash.substring(0, lastSlash + 1));
-    }
-
-    private String extractLastPath(String path) {
-        String withoutTrailingSlash = pathWithoutTrailingSlash(path);
-        int lastSlash = withoutTrailingSlash.lastIndexOf("/");
-
-        if (lastSlash < 0) {
-            return withoutTrailingSlash;
-        }
-
-        return withoutTrailingSlash.substring(lastSlash + 1);
-    }
-
-    private String pathWithoutTrailingSlash(String path) {
-        if (path == null || path.isBlank()) {
-            return path;
-        }
-
-        return path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
     }
 
     private String prepareDirectoryPath(String pathDirectory) {

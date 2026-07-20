@@ -1,6 +1,6 @@
 package com.linkermak.cloud_file_storage.repositories.session;
 
-import com.linkermak.cloud_file_storage.dto.authentication.UserSession;
+import com.linkermak.cloud_file_storage.dto.web.authentication.UserSession;
 
 import java.time.Duration;
 import java.util.Optional;

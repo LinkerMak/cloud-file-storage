@@ -1,8 +1,7 @@
 package com.linkermak.cloud_file_storage.controllers;
 
-import com.linkermak.cloud_file_storage.dto.StorageResource;
+import com.linkermak.cloud_file_storage.dto.web.controller.StorageResource;
 import com.linkermak.cloud_file_storage.services.directory.DirectoryService;
-import com.linkermak.cloud_file_storage.services.directory.DirectoryServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -1,7 +1,7 @@
 package com.linkermak.cloud_file_storage.repositories.session;
 
 import com.linkermak.cloud_file_storage.config.properties.SessionProperties;
-import com.linkermak.cloud_file_storage.dto.authentication.UserSession;
+import com.linkermak.cloud_file_storage.dto.web.authentication.UserSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
@@ -28,7 +28,7 @@ public class RedisSessionRepository implements SessionRepository {
 
         redisTemplate.opsForValue().set(key,
                 session,
-                Duration.ofMinutes(sessionProperties.getTtlMinutes()));
+                Duration.ofSeconds(sessionProperties.getTtlSeconds()));
 
         return uuid;
     }
@@ -46,23 +46,23 @@ public class RedisSessionRepository implements SessionRepository {
 
     @Override
     public Duration getRemainingTTL(String sessionUUID) {
-        Long ttlMinutes = redisTemplate.getExpire(KEY_PREFIX + sessionUUID, TimeUnit.MINUTES);
+        Long ttlSeconds = redisTemplate.getExpire(KEY_PREFIX + sessionUUID, TimeUnit.SECONDS);
 
-        if(ttlMinutes == null) {
+        if(ttlSeconds == null) {
             throw new IllegalStateException("Session TTL is unavailable");
         }
 
-        if(ttlMinutes < 0) {
-            throw new IllegalStateException("Invalid session TTL:" + ttlMinutes);
+        if(ttlSeconds < 0) {
+            throw new IllegalStateException("Invalid session TTL:" + ttlSeconds);
         }
 
-        return Duration.ofMinutes(ttlMinutes);
+        return Duration.ofSeconds(ttlSeconds);
     }
 
     @Override
     public void refreshTTL(String sessionUUID) {
         redisTemplate.expire(
                 KEY_PREFIX + sessionUUID,
-                Duration.ofMinutes(sessionProperties.getTtlMinutes()));
+                Duration.ofSeconds(sessionProperties.getTtlSeconds()));
     }
 }

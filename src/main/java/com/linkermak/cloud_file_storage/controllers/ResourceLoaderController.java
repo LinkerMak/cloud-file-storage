@@ -24,7 +24,7 @@ public class ResourceLoaderController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<List<StorageResource>> uploadResource(@RequestParam("path") String path,
-                                                                @RequestParam("object")List<MultipartFile> files) throws IOException {
+                                                                @RequestParam("object") List<MultipartFile> files) throws IOException {
         List<StorageResource> storageResources = fileTransferService.uploadResource(path, files);
         return ResponseEntity
                 .status(HttpStatus.CREATED)

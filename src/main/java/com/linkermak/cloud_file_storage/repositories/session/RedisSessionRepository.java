@@ -48,11 +48,11 @@ public class RedisSessionRepository implements SessionRepository {
     public Duration getRemainingTTL(String sessionUUID) {
         Long ttlSeconds = redisTemplate.getExpire(KEY_PREFIX + sessionUUID, TimeUnit.SECONDS);
 
-        if(ttlSeconds == null) {
+        if (ttlSeconds == null) {
             throw new IllegalStateException("Session TTL is unavailable");
         }
 
-        if(ttlSeconds < 0) {
+        if (ttlSeconds < 0) {
             throw new IllegalStateException("Invalid session TTL:" + ttlSeconds);
         }
 

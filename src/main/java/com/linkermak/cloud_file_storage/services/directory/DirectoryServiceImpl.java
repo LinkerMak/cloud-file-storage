@@ -1,12 +1,12 @@
 package com.linkermak.cloud_file_storage.services.directory;
 
 import com.linkermak.cloud_file_storage.config.security.CurrentUserProvider;
+import com.linkermak.cloud_file_storage.dto.storage.StorageObjectInfo;
 import com.linkermak.cloud_file_storage.dto.web.controller.StorageResource;
 import com.linkermak.cloud_file_storage.dto.web.controller.StorageResourceType;
 import com.linkermak.cloud_file_storage.exceptions.ResourceAlreadyExistsException;
 import com.linkermak.cloud_file_storage.exceptions.ResourceNotFoundException;
 import com.linkermak.cloud_file_storage.repositories.storage.ObjectStorageRepository;
-import com.linkermak.cloud_file_storage.dto.storage.StorageObjectInfo;
 import com.linkermak.cloud_file_storage.utils.StoragePathNormalizer;
 import com.linkermak.cloud_file_storage.utils.StoragePathUtils;
 import com.linkermak.cloud_file_storage.utils.StoragePathValidator;
@@ -92,7 +92,7 @@ public class DirectoryServiceImpl implements DirectoryService {
     @Override
     public void validateDirectoryExists(String pathDirectory) {
         String normalizePath = prepareDirectoryPath(pathDirectory);
-        if(!storageRepository.existsDirectory(userProvider.currentUserId(), normalizePath)) {
+        if (!storageRepository.existsDirectory(userProvider.currentUserId(), normalizePath)) {
             throw new ResourceNotFoundException("Directory not found");
         }
     }

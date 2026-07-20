@@ -100,7 +100,7 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
             if (ttl.compareTo(Duration.ofSeconds(sessionProperties.getTtlRefreshThresholdSeconds())) < 0) {
                 sessionRepository.refreshTTL(sessionUUID);
             }
-        } catch(IllegalStateException e) {
+        } catch (IllegalStateException e) {
             throw new SessionAuthenticationException(e.getMessage(), e.getCause());
         }
     }

@@ -77,7 +77,7 @@ public class FilesControllerAdvice {
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ExceptionResponse("Unknown error"));
     }
-    
+
     private void errorLogConsoleOutput(Exception e) {
         log.error("Error:reason = {}, message = {}", e, e.getMessage());
     }

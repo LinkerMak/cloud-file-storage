@@ -2,9 +2,9 @@ package com.linkermak.cloud_file_storage.services.transfer;
 
 import com.linkermak.cloud_file_storage.config.security.CurrentUserProvider;
 import com.linkermak.cloud_file_storage.dto.storage.UploadFileRequest;
-import com.linkermak.cloud_file_storage.dto.web.controller.StorageResource;
 import com.linkermak.cloud_file_storage.dto.transfer.PreparedFileUpload;
 import com.linkermak.cloud_file_storage.dto.transfer.PreparedUpload;
+import com.linkermak.cloud_file_storage.dto.web.controller.StorageResource;
 import com.linkermak.cloud_file_storage.dto.web.controller.StorageResourceType;
 import com.linkermak.cloud_file_storage.exceptions.loader.DuplicateUploadResourceException;
 import com.linkermak.cloud_file_storage.exceptions.loader.MultipartFileEmptyException;
@@ -45,7 +45,7 @@ public class FileTransferServiceImpl implements FileTransferService {
         Long userId = userProvider.currentUserId();
         List<StorageResource> storageResources = new ArrayList<>();
 
-        for(PreparedFileUpload file : preparedUpload.files()) {
+        for (PreparedFileUpload file : preparedUpload.files()) {
 
             String fullPath = preparedUpload.normalizedDirectoryPath()
                     + file.normalizedRelativePath();
@@ -75,7 +75,7 @@ public class FileTransferServiceImpl implements FileTransferService {
         List<String> fileParentPaths = StoragePathUtils
                 .extractAllParentPaths(relativePath);
 
-        for(String fileParentPath : fileParentPaths) {
+        for (String fileParentPath : fileParentPaths) {
             storageRepository.ensureDirectoryExists(userId, fileParentPath);
         }
     }
@@ -86,7 +86,7 @@ public class FileTransferServiceImpl implements FileTransferService {
 
         directoryService.validateDirectoryExists(preparedDirectoryPath);
 
-        for(PreparedFileUpload preparedFileUpload : preparedFileUploads) {
+        for (PreparedFileUpload preparedFileUpload : preparedFileUploads) {
             fileService.validateFileNotExists(preparedDirectoryPath
                     + preparedFileUpload.normalizedRelativePath());
         }
@@ -104,15 +104,15 @@ public class FileTransferServiceImpl implements FileTransferService {
     }
 
     private List<PreparedFileUpload> prepareFileUploads(List<MultipartFile> files) {
-        if(files == null || files.isEmpty()) {
+        if (files == null || files.isEmpty()) {
             throw new MultipartFileEmptyException("List multipart files is empty");
         }
 
         List<PreparedFileUpload> preparedFileUploads = new ArrayList<>();
         Set<String> fileNames = new HashSet<>();
 
-        for(MultipartFile file : files) {
-            if(file == null || file.isEmpty()) {
+        for (MultipartFile file : files) {
+            if (file == null || file.isEmpty()) {
                 throw new MultipartFileEmptyException("Multipart file is empty");
             }
 
@@ -121,7 +121,7 @@ public class FileTransferServiceImpl implements FileTransferService {
             );
             StoragePathValidator.validateFilePath(normalizeFilePath);
 
-            if(!fileNames.add(normalizeFilePath)) {
+            if (!fileNames.add(normalizeFilePath)) {
                 throw new DuplicateUploadResourceException(
                         "File path:" + normalizeFilePath + " are duplicated");
             }

@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class FileServiceImpl implements FileService{
+public class FileServiceImpl implements FileService {
 
     private final ObjectStorageRepository storageRepository;
 
@@ -16,7 +16,7 @@ public class FileServiceImpl implements FileService{
 
     @Override
     public void validateFileNotExists(String filePath) {
-        if(storageRepository.existsFile(userProvider.currentUserId(), filePath)) {
+        if (storageRepository.existsFile(userProvider.currentUserId(), filePath)) {
             throw new ResourceAlreadyExistsException("File already exists by path:" + filePath);
         }
     }

@@ -2,7 +2,10 @@ package com.linkermak.cloud_file_storage.utils;
 
 import lombok.experimental.UtilityClass;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 @UtilityClass
 public class StoragePathUtils {
@@ -11,7 +14,7 @@ public class StoragePathUtils {
         List<String> paths = new ArrayList<>();
         Optional<String> parentPath = extractParentPath(path);
 
-        while(parentPath.isPresent()) {
+        while (parentPath.isPresent()) {
             String value = parentPath.get();
             paths.add(value);
             parentPath = extractParentPath(value);

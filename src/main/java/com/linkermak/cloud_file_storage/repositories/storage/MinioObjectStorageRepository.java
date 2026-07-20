@@ -28,7 +28,7 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository {
     @Override
     public void uploadFile(UploadFileRequest fileRequest) {
         String key = pathToKey(fileRequest.userId(), fileRequest.filePath());
-        try(InputStream in = fileRequest.inputStream()){
+        try (InputStream in = fileRequest.inputStream()) {
             PutObjectArgs.Builder builder = PutObjectArgs.builder()
                     .bucket(bucket)
                     .object(key)
@@ -36,7 +36,7 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository {
                     .contentType(fileRequest.contentType());
 
             minioClient.putObject(builder.build());
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new StorageException("Failed to upload file by key:" + key, e);
         }
     }

@@ -1,6 +1,8 @@
-package com.linkermak.cloud_file_storage.repositories;
+package com.linkermak.cloud_file_storage.repositories.storage;
 
 import com.linkermak.cloud_file_storage.config.properties.MinioProperties;
+import com.linkermak.cloud_file_storage.dto.storage.StorageObjectInfo;
+import com.linkermak.cloud_file_storage.dto.storage.UploadFileRequest;
 import com.linkermak.cloud_file_storage.exceptions.StorageException;
 import io.minio.*;
 import io.minio.errors.ErrorResponseException;
@@ -8,6 +10,7 @@ import io.minio.messages.Item;
 import org.springframework.stereotype.Repository;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,6 +23,22 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository {
     public MinioObjectStorageRepository(MinioClient minioClient, MinioProperties properties) {
         this.minioClient = minioClient;
         this.bucket = properties.getBucket();
+    }
+
+    @Override
+    public void uploadFile(UploadFileRequest fileRequest) {
+        String key = pathToKey(fileRequest.userId(), fileRequest.filePath());
+        try(InputStream in = fileRequest.inputStream()){
+            PutObjectArgs.Builder builder = PutObjectArgs.builder()
+                    .bucket(bucket)
+                    .object(key)
+                    .stream(in, fileRequest.size(), -1L)
+                    .contentType(fileRequest.contentType());
+
+            minioClient.putObject(builder.build());
+        } catch(Exception e) {
+            throw new StorageException("Failed to upload file by key:" + key, e);
+        }
     }
 
     @Override
@@ -49,22 +68,23 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository {
 
             return resources;
         } catch (Exception e) {
-            throw new StorageException("Failed to find resources  by path:" + path, e);
+            throw new StorageException("Failed to find resources by key:" + key, e);
         }
     }
 
     @Override
     public void createDirectory(Long userId, String directoryPath) {
+        String key = pathToKey(userId, directoryPath);
         try {
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(bucket)
-                            .object(pathToKey(userId, directoryPath))
+                            .object(key)
                             .stream(new ByteArrayInputStream(new byte[0]), 0L, -1L)
                             .build()
             );
         } catch (Exception e) {
-            throw new StorageException("Failed to create directory", e);
+            throw new StorageException("Failed to create directory by key:" + key, e);
         }
     }
 
@@ -115,6 +135,11 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository {
         } catch (Exception e) {
             throw new StorageException("Failed to check object existence:" + key, e);
         }
+    }
+
+    @Override
+    public void ensureDirectoryExists(Long userId, String directoryPath) {
+        createDirectory(userId, directoryPath);
     }
 
     private String pathToKey(Long id, String path) {

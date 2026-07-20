@@ -1,8 +1,8 @@
 package com.linkermak.cloud_file_storage.services.authentication;
 
-import com.linkermak.cloud_file_storage.dto.authentication.LoginResult;
-import com.linkermak.cloud_file_storage.dto.authentication.UserSession;
-import com.linkermak.cloud_file_storage.dto.authentication.signrequest.SignRequest;
+import com.linkermak.cloud_file_storage.dto.web.authentication.LoginResult;
+import com.linkermak.cloud_file_storage.dto.web.authentication.UserSession;
+import com.linkermak.cloud_file_storage.dto.web.authentication.signrequest.SignRequest;
 import com.linkermak.cloud_file_storage.repositories.session.SessionRepository;
 import com.linkermak.cloud_file_storage.services.authentication.userdetails.UserDetailsImpl;
 import lombok.RequiredArgsConstructor;

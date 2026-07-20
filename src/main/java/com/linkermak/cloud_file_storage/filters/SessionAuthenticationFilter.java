@@ -1,7 +1,7 @@
 package com.linkermak.cloud_file_storage.filters;
 
 import com.linkermak.cloud_file_storage.config.properties.SessionProperties;
-import com.linkermak.cloud_file_storage.dto.authentication.UserSession;
+import com.linkermak.cloud_file_storage.dto.web.authentication.UserSession;
 import com.linkermak.cloud_file_storage.exceptions.session.SessionAuthenticationException;
 import com.linkermak.cloud_file_storage.models.User;
 import com.linkermak.cloud_file_storage.repositories.session.SessionRepository;
@@ -97,7 +97,7 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
     private void refreshSessionTTL(String sessionUUID) {
         try {
             Duration ttl = sessionRepository.getRemainingTTL(sessionUUID);
-            if (ttl.compareTo(Duration.ofMinutes(sessionProperties.getTtlRefreshThreshold())) < 0) {
+            if (ttl.compareTo(Duration.ofSeconds(sessionProperties.getTtlRefreshThresholdSeconds())) < 0) {
                 sessionRepository.refreshTTL(sessionUUID);
             }
         } catch(IllegalStateException e) {

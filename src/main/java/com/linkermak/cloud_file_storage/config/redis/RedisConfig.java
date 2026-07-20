@@ -1,6 +1,6 @@
 package com.linkermak.cloud_file_storage.config.redis;
 
-import com.linkermak.cloud_file_storage.dto.authentication.UserSession;
+import com.linkermak.cloud_file_storage.dto.web.authentication.UserSession;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;

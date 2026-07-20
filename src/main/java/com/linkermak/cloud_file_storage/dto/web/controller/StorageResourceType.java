@@ -1,4 +1,4 @@
-package com.linkermak.cloud_file_storage.dto;
+package com.linkermak.cloud_file_storage.dto.web.controller;
 
 public enum StorageResourceType {
     DIRECTORY,

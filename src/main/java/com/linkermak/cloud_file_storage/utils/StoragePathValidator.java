@@ -19,7 +19,7 @@ public final class StoragePathValidator {
     }
 
     public static void validateDirectoryPath(String path) {
-        if(path.isEmpty()) {
+        if (path.isEmpty()) {
             return;
         }
 

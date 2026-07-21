@@ -1,18 +1,16 @@
 package com.linkermak.cloud_file_storage.controllers;
 
+import com.linkermak.cloud_file_storage.dto.transfer.web.DownloadedResource;
 import com.linkermak.cloud_file_storage.dto.web.controller.StorageResource;
 import com.linkermak.cloud_file_storage.services.transfer.FileTransferService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.core.io.Resource;
+import org.springframework.http.*;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @RestController
@@ -31,5 +29,21 @@ public class ResourceLoaderController {
                 .body(storageResources);
     }
 
-
+    @GetMapping("/download")
+    public ResponseEntity<Resource> downloadResource(@RequestParam("path") String path) {
+        System.out.println(path);
+        DownloadedResource downloadedResource = fileTransferService.downloadResource(path);
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition
+                                .attachment()
+                                .filename(downloadedResource.filename(), StandardCharsets.UTF_8)
+                                .build()
+                                .toString())
+                .contentLength(downloadedResource.contentLength())
+                .body(downloadedResource.resource());
+    }
 }

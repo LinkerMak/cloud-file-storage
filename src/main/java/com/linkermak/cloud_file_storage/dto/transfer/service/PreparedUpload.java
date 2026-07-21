@@ -1,4 +1,4 @@
-package com.linkermak.cloud_file_storage.dto.transfer;
+package com.linkermak.cloud_file_storage.dto.transfer.service;
 
 import java.util.List;
 

@@ -1,20 +1,23 @@
 package com.linkermak.cloud_file_storage.services.transfer;
 
 import com.linkermak.cloud_file_storage.config.security.CurrentUserProvider;
+import com.linkermak.cloud_file_storage.dto.storage.StorageDownloadObject;
 import com.linkermak.cloud_file_storage.dto.storage.UploadFileRequest;
-import com.linkermak.cloud_file_storage.dto.transfer.PreparedFileUpload;
-import com.linkermak.cloud_file_storage.dto.transfer.PreparedUpload;
+import com.linkermak.cloud_file_storage.dto.transfer.service.PreparedFileUpload;
+import com.linkermak.cloud_file_storage.dto.transfer.service.PreparedUpload;
+import com.linkermak.cloud_file_storage.dto.transfer.web.DownloadedResource;
 import com.linkermak.cloud_file_storage.dto.web.controller.StorageResource;
 import com.linkermak.cloud_file_storage.dto.web.controller.StorageResourceType;
 import com.linkermak.cloud_file_storage.exceptions.loader.DuplicateUploadResourceException;
 import com.linkermak.cloud_file_storage.exceptions.loader.MultipartFileEmptyException;
 import com.linkermak.cloud_file_storage.repositories.storage.ObjectStorageRepository;
 import com.linkermak.cloud_file_storage.services.directory.DirectoryService;
-import com.linkermak.cloud_file_storage.services.file.FileService;
+import com.linkermak.cloud_file_storage.services.resource.ResourceService;
 import com.linkermak.cloud_file_storage.utils.StoragePathNormalizer;
 import com.linkermak.cloud_file_storage.utils.StoragePathUtils;
 import com.linkermak.cloud_file_storage.utils.StoragePathValidator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,17 +26,33 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 @Service
 @RequiredArgsConstructor
 public class FileTransferServiceImpl implements FileTransferService {
 
     private final DirectoryService directoryService;
-    private final FileService fileService;
+    private final ResourceService fileService;
 
     private final ObjectStorageRepository storageRepository;
 
     private final CurrentUserProvider userProvider;
+
+    @Override
+    public DownloadedResource downloadResource(String filePath) {
+        String normalizedPath = prepareFilePath(filePath);
+
+        StorageDownloadObject downloadObject =
+                storageRepository.downloadFile(userProvider.currentUserId(), normalizedPath);
+
+        // TODO : подумать, может дто это лишнее
+        return new DownloadedResource(
+                StoragePathUtils.extractLastPath(downloadObject.fileName()),
+                new InputStreamResource(downloadObject.inputStream()),
+                downloadObject.size());
+    }
 
     @Override
     public List<StorageResource> uploadResource(String directoryPath, List<MultipartFile> files) throws IOException {
@@ -87,7 +106,7 @@ public class FileTransferServiceImpl implements FileTransferService {
         directoryService.validateDirectoryExists(preparedDirectoryPath);
 
         for (PreparedFileUpload preparedFileUpload : preparedFileUploads) {
-            fileService.validateFileNotExists(preparedDirectoryPath
+            fileService.validateResourceNotExists(preparedDirectoryPath
                     + preparedFileUpload.normalizedRelativePath());
         }
 
@@ -96,11 +115,26 @@ public class FileTransferServiceImpl implements FileTransferService {
                 preparedFileUploads);
     }
 
+    private String prepareFilePath(String filePath) {
+        return preparePath(
+                filePath,
+                StoragePathNormalizer::normalizeFilePath,
+                StoragePathValidator::validateFilePath);
+    }
+
     private String prepareDirectoryPath(String directoryPath) {
-        String normalizeDirectoryPath = StoragePathNormalizer
-                .normalizeDirectoryPath(directoryPath);
-        StoragePathValidator.validateDirectoryPath(normalizeDirectoryPath);
-        return normalizeDirectoryPath;
+        return preparePath(
+                directoryPath,
+                StoragePathNormalizer::normalizeDirectoryPath,
+                StoragePathValidator::validateDirectoryPath);
+    }
+
+    private String preparePath(String path,
+                               Function<String, String> normalizer,
+                               Consumer<String> validator) {
+        path = normalizer.apply(path);
+        validator.accept(path);
+        return path;
     }
 
     private List<PreparedFileUpload> prepareFileUploads(List<MultipartFile> files) {

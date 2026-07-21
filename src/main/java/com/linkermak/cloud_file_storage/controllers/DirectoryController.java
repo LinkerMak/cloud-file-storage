@@ -25,9 +25,12 @@ public class DirectoryController {
     }
 
     @GetMapping
-    ResponseEntity<List<StorageResource>> getAllDirectories(
+    ResponseEntity<List<StorageResource>> getAllResourcesInDirectory(
             @RequestParam(value = "path", defaultValue = "") String path) {
         List<StorageResource> storageResources = directoryService.getResourcesByPath(path);
+        for (StorageResource storageResource : storageResources) {
+            System.out.println(storageResource);
+        }
         return ResponseEntity
                 .ok()
                 .body(storageResources);

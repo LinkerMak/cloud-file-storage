@@ -1,9 +1,9 @@
 package com.linkermak.cloud_file_storage.repositories.storage;
 
 import com.linkermak.cloud_file_storage.config.properties.MinioProperties;
-import com.linkermak.cloud_file_storage.dto.storage.StorageDownloadObject;
-import com.linkermak.cloud_file_storage.dto.storage.StorageObjectInfo;
-import com.linkermak.cloud_file_storage.dto.storage.UploadFileRequest;
+import com.linkermak.cloud_file_storage.dto.repositories.storage.StorageDownloadObject;
+import com.linkermak.cloud_file_storage.dto.repositories.storage.StorageObjectInfo;
+import com.linkermak.cloud_file_storage.dto.repositories.storage.UploadFileRequest;
 import com.linkermak.cloud_file_storage.exceptions.StorageException;
 import io.minio.*;
 import io.minio.errors.ErrorResponseException;
@@ -28,7 +28,7 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository {
     }
 
     @Override
-    public StorageObjectInfo getResourceByPath(Long userId, String resourcePath) {
+    public StorageObjectInfo getResourceInfoByPath(Long userId, String resourcePath) {
         String key = pathToKey(userId, resourcePath);
         try {
             StatObjectResponse stat = minioClient.statObject(
@@ -102,14 +102,23 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository {
     }
 
     @Override
+    public List<StorageObjectInfo> findResourcesRecursiveByPrefix(Long userId, String path) {
+        return findResourcesByPrefix(userId, path, true);
+    }
+
+    @Override
     public List<StorageObjectInfo> findResourcesByPrefix(Long userId, String path) {
+        return findResourcesByPrefix(userId, path, false);
+    }
+
+    public List<StorageObjectInfo> findResourcesByPrefix(Long userId, String path, boolean recursive) {
         String key = pathToKey(userId, path);
         try {
             Iterable<Result<Item>> results = minioClient.listObjects(
                     ListObjectsArgs.builder()
                             .bucket(bucket)
                             .prefix(key)
-                            .recursive(false)
+                            .recursive(recursive)
                             .build()
             );
 
@@ -158,6 +167,26 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository {
     public boolean existsFile(Long userId, String filePath) {
         String key = pathToKey(userId, filePath);
         return objectExists(key);
+    }
+
+    @Override
+    public void deleteResource(Long userId, String filePath) {
+        String key = pathToKey(userId, filePath);
+        try {
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder()
+                            .bucket(bucket)
+                            .object(key)
+                            .build()
+            );
+        } catch (ErrorResponseException e) {
+            if ("NoSuchKey".equals(e.errorResponse().code())) {
+                throw new StorageException("Resource not found by key:" + key, e);
+            }
+            throw new StorageException("Failed to delete resource by key:" + key, e);
+        } catch (Exception e) {
+            throw new StorageException("Failed to delete resource by key:" + key, e);
+        }
     }
 
     @Override

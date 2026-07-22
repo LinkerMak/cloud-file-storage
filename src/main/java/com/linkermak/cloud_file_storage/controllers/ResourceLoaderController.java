@@ -31,7 +31,6 @@ public class ResourceLoaderController {
 
     @GetMapping("/download")
     public ResponseEntity<Resource> downloadResource(@RequestParam("path") String path) {
-        System.out.println(path);
         DownloadedResource downloadedResource = fileTransferService.downloadResource(path);
         return ResponseEntity
                 .ok()

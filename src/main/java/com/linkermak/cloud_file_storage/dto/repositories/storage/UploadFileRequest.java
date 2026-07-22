@@ -1,4 +1,4 @@
-package com.linkermak.cloud_file_storage.dto.storage;
+package com.linkermak.cloud_file_storage.dto.repositories.storage;
 
 import java.io.InputStream;
 

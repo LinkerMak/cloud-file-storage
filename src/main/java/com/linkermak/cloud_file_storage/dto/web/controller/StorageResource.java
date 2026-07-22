@@ -10,7 +10,7 @@ import lombok.ToString;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @ToString
 public class StorageResource {
-    private String parentPath;
+    private String path;
     private String name;
     private Long size;
     private StorageResourceType type;

@@ -1,4 +1,4 @@
-package com.linkermak.cloud_file_storage.cookie;
+package com.linkermak.cloud_file_storage.controllers.cookie;
 
 import com.linkermak.cloud_file_storage.config.properties.SessionProperties;
 import lombok.RequiredArgsConstructor;

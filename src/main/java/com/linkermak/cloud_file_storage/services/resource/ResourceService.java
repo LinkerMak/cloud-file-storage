@@ -4,7 +4,9 @@ import com.linkermak.cloud_file_storage.dto.web.controller.StorageResource;
 
 public interface ResourceService {
 
-    StorageResource getResourceByPath(String path);
+    StorageResource getResource(String path);
 
-    void validateResourceNotExists(String filePath);
+    void deleteResource(String path);
+
+    void validateFileNotExists(String path);
 }

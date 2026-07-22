@@ -1,4 +1,4 @@
-package com.linkermak.cloud_file_storage.utils;
+package com.linkermak.cloud_file_storage.controllers.cookie;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;

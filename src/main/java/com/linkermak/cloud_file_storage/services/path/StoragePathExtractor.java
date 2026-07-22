@@ -1,4 +1,4 @@
-package com.linkermak.cloud_file_storage.utils;
+package com.linkermak.cloud_file_storage.services.path;
 
 import lombok.experimental.UtilityClass;
 
@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 @UtilityClass
-public class StoragePathUtils {
+public class StoragePathExtractor {
 
     public static List<String> extractAllParentPaths(String path) {
         List<String> paths = new ArrayList<>();

@@ -1,14 +1,14 @@
 package com.linkermak.cloud_file_storage.controllers;
 
 import com.linkermak.cloud_file_storage.config.properties.SessionProperties;
-import com.linkermak.cloud_file_storage.cookie.SessionCookieBuilder;
+import com.linkermak.cloud_file_storage.controllers.cookie.CookieValueExtractor;
+import com.linkermak.cloud_file_storage.controllers.cookie.SessionCookieBuilder;
 import com.linkermak.cloud_file_storage.dto.web.authentication.LoginResult;
 import com.linkermak.cloud_file_storage.dto.web.authentication.response.UsernameResponse;
 import com.linkermak.cloud_file_storage.dto.web.authentication.signrequest.SignInRequest;
 import com.linkermak.cloud_file_storage.dto.web.authentication.signrequest.SignUpRequest;
 import com.linkermak.cloud_file_storage.services.authentication.UserAuthenticationService;
 import com.linkermak.cloud_file_storage.services.authentication.UserRegisterService;
-import com.linkermak.cloud_file_storage.utils.CookieValueExtractor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

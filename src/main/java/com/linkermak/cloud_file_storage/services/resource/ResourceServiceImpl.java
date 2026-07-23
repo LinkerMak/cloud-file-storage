@@ -4,20 +4,26 @@ import com.linkermak.cloud_file_storage.config.security.CurrentUserProvider;
 import com.linkermak.cloud_file_storage.dto.repositories.storage.StorageObjectInfo;
 import com.linkermak.cloud_file_storage.dto.web.controller.StorageResource;
 import com.linkermak.cloud_file_storage.dto.web.controller.StorageResourceType;
-import com.linkermak.cloud_file_storage.exceptions.ResourceAlreadyExistsException;
-import com.linkermak.cloud_file_storage.exceptions.ResourceNotFoundException;
+import com.linkermak.cloud_file_storage.exceptions.resources.InvalidQueryException;
+import com.linkermak.cloud_file_storage.exceptions.resources.ResourceAlreadyExistsException;
+import com.linkermak.cloud_file_storage.exceptions.resources.ResourceNotFoundException;
 import com.linkermak.cloud_file_storage.repositories.storage.ObjectStorageRepository;
 import com.linkermak.cloud_file_storage.services.directory.DirectoryService;
 import com.linkermak.cloud_file_storage.services.path.StoragePathExtractor;
 import com.linkermak.cloud_file_storage.services.path.preparer.StoragePathPreparer;
 import lombok.RequiredArgsConstructor;
+import org.apache.coyote.BadRequestException;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class ResourceServiceImpl implements ResourceService {
+
+    private static final String BASE_DIRECTORY_PATH = "";
 
     private final DirectoryService directoryService;
 
@@ -28,17 +34,49 @@ public class ResourceServiceImpl implements ResourceService {
     private final StoragePathPreparer pathPreparer;
 
     @Override
+    public List<StorageResource> searchResources(String query) {
+        if(query == null || query.isBlank()) {
+            throw new InvalidQueryException("Query in null");
+        }
+        String normalizedQuery = query.trim().toLowerCase();
+
+        List<StorageObjectInfo> allUserResources = storageRepository.findDescendantsByPrefix(
+                userProvider.currentUserId(),
+                BASE_DIRECTORY_PATH
+        );
+
+        return allUserResources.stream()
+                .filter(resource -> resource.path().toLowerCase().contains(normalizedQuery))
+                .map(resource -> new StorageResource(
+                        StoragePathExtractor.extractParentPath(resource.path()).orElse(""),
+                        StoragePathExtractor.extractLastPath(resource.path()),
+                        resource.size(),
+                        resource.path().endsWith("/") ?
+                                StorageResourceType.DIRECTORY
+                                : StorageResourceType.FILE
+                ))
+                .toList();
+    }
+
+    @Override
     public StorageResource getResource(String path) {
         String trimmedPath = pathPreparer.trimPath(path);
 
         boolean isDirectory = trimmedPath.endsWith("/");
 
-        // TODO: возможно лучше сделать через Optional и выброс ошибки либо проверять наличие ресурса заранее
+        String preparedPath = isDirectory ?
+                pathPreparer.prepareDirectoryPath(trimmedPath) :
+                pathPreparer.prepareFilePath(trimmedPath);
+
+        if(isDirectory) {
+            directoryService.validatePreparedDirectoryExists(preparedPath);
+        } else {
+            validatePreparedFileExists(preparedPath);
+        }
+
         StorageObjectInfo objectInfo = storageRepository.getResourceInfoByPath(
                 userProvider.currentUserId(),
-                isDirectory ?
-                        pathPreparer.prepareDirectoryPath(trimmedPath) :
-                        pathPreparer.prepareFilePath(trimmedPath)
+                preparedPath
         );
 
         return new StorageResource(
@@ -50,43 +88,73 @@ public class ResourceServiceImpl implements ResourceService {
     }
 
     @Override
+    public StorageResource moveResource(String from, String to) {
+        if(isRename(from, to)) {
+
+        }
+
+        return move();
+    }
+
+    private boolean isRename(String from, String to) {
+
+    }
+
+    private StorageResource move(String from, String to) {
+
+    }
+
+    @Override
     public void deleteResource(String path) {
         String trimmedPath = pathPreparer.trimPath(path);
         boolean isDirectory = trimmedPath.endsWith("/");
-        isDirectory ? deleteDirectory(path) : deleteFile(path);
+
+        if (isDirectory) {
+            deleteDirectory(trimmedPath);
+        } else {
+            deleteFile(trimmedPath);
+        }
     }
 
     private void deleteFile(String path) {
         Long userId = userProvider.currentUserId();
         String preparedPath = pathPreparer.prepareFilePath(path);
 
-        if(!storageRepository.existsFile(userId, preparedPath)) {
-            throw new ResourceNotFoundException("File not found by path:" + preparedPath);
-        }
+        validatePreparedFileExists(preparedPath);
 
         storageRepository.deleteResource(userId, preparedPath);
     }
 
-    private void deleteDirectory(String path) {
+    private void deleteDirectory(String directoryPath) {
         Long userId = userProvider.currentUserId();
-        String preparedPath = pathPreparer.prepareDirectoryPath(path);
+        String preparedDirectoryPath = pathPreparer.prepareDirectoryPath(directoryPath);
 
-        // сделать обший validateResourceExists, который внутри сам будет определять папка это или файл и проверять
-        directoryService.validateDirectoryExists(preparedPath);
+        directoryService.validatePreparedDirectoryExists(preparedDirectoryPath);
 
-        List<StorageObjectInfo> resources = storageRepository.findResourcesRecursiveByPrefix(userId, preparedPath);
+        List<StorageObjectInfo> resources = storageRepository.findDescendantsByPrefix(userId, preparedDirectoryPath);
 
-        for(StorageObjectInfo resource : resources) {
-            // тут как раз уже нужен обший validateResourceExists
+        List<String> pathsToDelete = new ArrayList<>(
+                resources.stream()
+                .map(info -> info.path())
+                .toList());
+        pathsToDelete.add(preparedDirectoryPath);
+
+        storageRepository.deleteResources(
+                userId,
+                pathsToDelete);
+    }
+
+    @Override
+    public void validatePreparedFileNotExists(String preparedFilePath) {
+        if (storageRepository.existsFile(userProvider.currentUserId(), preparedFilePath)) {
+            throw new ResourceAlreadyExistsException("File already exists by path:" + preparedFilePath);
         }
     }
 
     @Override
-    public void validateFileNotExists(String filePath) {
-        if (storageRepository.existsFile(userProvider.currentUserId(), filePath)) {
-            throw new ResourceAlreadyExistsException("File already exists by path:" + filePath);
+    public void validatePreparedFileExists(String preparedFilePath) {
+        if (!storageRepository.existsFile(userProvider.currentUserId(), preparedFilePath)) {
+            throw new ResourceNotFoundException("File not found by path:" + preparedFilePath);
         }
     }
-
-
 }

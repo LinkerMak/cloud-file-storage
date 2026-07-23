@@ -4,8 +4,8 @@ import com.linkermak.cloud_file_storage.config.security.CurrentUserProvider;
 import com.linkermak.cloud_file_storage.dto.repositories.storage.StorageObjectInfo;
 import com.linkermak.cloud_file_storage.dto.web.controller.StorageResource;
 import com.linkermak.cloud_file_storage.dto.web.controller.StorageResourceType;
-import com.linkermak.cloud_file_storage.exceptions.ResourceAlreadyExistsException;
-import com.linkermak.cloud_file_storage.exceptions.ResourceNotFoundException;
+import com.linkermak.cloud_file_storage.exceptions.resources.ResourceAlreadyExistsException;
+import com.linkermak.cloud_file_storage.exceptions.resources.ResourceNotFoundException;
 import com.linkermak.cloud_file_storage.repositories.storage.ObjectStorageRepository;
 import com.linkermak.cloud_file_storage.services.path.StoragePathExtractor;
 import com.linkermak.cloud_file_storage.services.path.preparer.StoragePathPreparer;
@@ -28,12 +28,11 @@ public class DirectoryServiceImpl implements DirectoryService {
     private final StoragePathPreparer pathPreparer;
 
     @Override
-    public List<StorageResource> getResourcesByPath(String pathDirectory) {
+    public List<StorageResource> getDirectoryContent(String pathDirectory) {
         String normalizePath = pathPreparer.prepareDirectoryPath(pathDirectory);
 
         Long userId = userProvider.currentUserId();
 
-        // сделать обший validateResourceExists, который внутри сам будет определять папка это или файл и проверять
         if (!storageRepository.existsDirectory(userId, normalizePath)) {
             throw new ResourceNotFoundException("Directory not found by path:" + normalizePath);
         }
@@ -92,10 +91,9 @@ public class DirectoryServiceImpl implements DirectoryService {
     }
 
     @Override
-    public void validateDirectoryExists(String pathDirectory) {
-        String preparedPath = pathPreparer.prepareDirectoryPath(pathDirectory);
-        if (!storageRepository.existsDirectory(userProvider.currentUserId(), preparedPath)) {
-            throw new ResourceNotFoundException("Directory not found");
+    public void validatePreparedDirectoryExists(String preparedDirectoryPath) {
+        if (!storageRepository.existsDirectory(userProvider.currentUserId(), preparedDirectoryPath)) {
+            throw new ResourceNotFoundException("Directory not found by path:" + preparedDirectoryPath);
         }
     }
 

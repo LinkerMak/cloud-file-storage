@@ -6,9 +6,9 @@ import java.util.List;
 
 public interface DirectoryService {
 
-    List<StorageResource> getResourcesByPath(String directoryPath);
+    List<StorageResource> getDirectoryContent(String directoryPath);
 
     StorageResource createDirectory(String directoryPath);
 
-    void validateDirectoryExists(String directoryPath);
+    void validatePreparedDirectoryExists(String preparedDirectoryPath);
 }

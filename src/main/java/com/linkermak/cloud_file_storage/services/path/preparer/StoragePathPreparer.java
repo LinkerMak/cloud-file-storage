@@ -1,6 +1,6 @@
 package com.linkermak.cloud_file_storage.services.path.preparer;
 
-import com.linkermak.cloud_file_storage.exceptions.InvalidPathException;
+import com.linkermak.cloud_file_storage.exceptions.resources.InvalidPathException;
 import org.springframework.stereotype.Component;
 
 import java.util.function.Consumer;

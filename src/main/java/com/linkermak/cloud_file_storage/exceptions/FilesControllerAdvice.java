@@ -4,6 +4,11 @@ import com.linkermak.cloud_file_storage.dto.web.exception.ExceptionResponse;
 import com.linkermak.cloud_file_storage.exceptions.loader.DuplicateUploadResourceException;
 import com.linkermak.cloud_file_storage.exceptions.loader.MultipartFileEmptyException;
 import com.linkermak.cloud_file_storage.exceptions.loader.OriginalFileNameEmptyException;
+import com.linkermak.cloud_file_storage.exceptions.repository.StorageException;
+import com.linkermak.cloud_file_storage.exceptions.resources.InvalidPathException;
+import com.linkermak.cloud_file_storage.exceptions.resources.InvalidQueryException;
+import com.linkermak.cloud_file_storage.exceptions.resources.ResourceAlreadyExistsException;
+import com.linkermak.cloud_file_storage.exceptions.resources.ResourceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,6 +45,14 @@ public class FilesControllerAdvice {
 
     @ExceptionHandler(InvalidPathException.class)
     public ResponseEntity<ExceptionResponse> invalidPathHandler(InvalidPathException e) {
+        warningLogConsoleOutput(e);
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ExceptionResponse(e.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidQueryException.class)
+    public ResponseEntity<ExceptionResponse> invalidPathHandler(InvalidQueryException e) {
         warningLogConsoleOutput(e);
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)

@@ -4,10 +4,12 @@ import com.linkermak.cloud_file_storage.config.properties.MinioProperties;
 import com.linkermak.cloud_file_storage.dto.repositories.storage.StorageDownloadObject;
 import com.linkermak.cloud_file_storage.dto.repositories.storage.StorageObjectInfo;
 import com.linkermak.cloud_file_storage.dto.repositories.storage.UploadFileRequest;
-import com.linkermak.cloud_file_storage.exceptions.StorageException;
+import com.linkermak.cloud_file_storage.exceptions.repository.StorageException;
 import io.minio.*;
 import io.minio.errors.ErrorResponseException;
 import io.minio.errors.MinioException;
+import io.minio.messages.DeleteRequest;
+import io.minio.messages.DeleteResult;
 import io.minio.messages.Item;
 import org.springframework.stereotype.Repository;
 
@@ -102,7 +104,7 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository {
     }
 
     @Override
-    public List<StorageObjectInfo> findResourcesRecursiveByPrefix(Long userId, String path) {
+    public List<StorageObjectInfo> findDescendantsByPrefix(Long userId, String path) {
         return findResourcesByPrefix(userId, path, true);
     }
 
@@ -170,8 +172,8 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository {
     }
 
     @Override
-    public void deleteResource(Long userId, String filePath) {
-        String key = pathToKey(userId, filePath);
+    public void deleteResource(Long userId, String path) {
+        String key = pathToKey(userId, path);
         try {
             minioClient.removeObject(
                     RemoveObjectArgs.builder()
@@ -186,6 +188,32 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository {
             throw new StorageException("Failed to delete resource by key:" + key, e);
         } catch (Exception e) {
             throw new StorageException("Failed to delete resource by key:" + key, e);
+        }
+    }
+
+    @Override
+    public void deleteResources(Long userId, List<String> paths) {
+        List<DeleteRequest.Object> objects = paths.stream()
+                .map(path -> new DeleteRequest.Object(pathToKey(userId, path)))
+                .toList();
+
+        try{
+            Iterable<Result<DeleteResult.Error>> errors = minioClient.removeObjects(
+                    RemoveObjectsArgs.builder()
+                            .bucket(bucket)
+                            .objects(objects)
+                            .build()
+            );
+
+            for(Result<DeleteResult.Error> errorResult : errors) {
+                DeleteResult.Error error = errorResult.get();
+                throw new StorageException("Failed to delete resource by key:" + error.resource()
+                + ", message:" + error);
+            }
+        } catch(StorageException e) {
+            throw e;
+        } catch(Exception e) {
+            throw new StorageException("Failed to delete resources", e);
         }
     }
 

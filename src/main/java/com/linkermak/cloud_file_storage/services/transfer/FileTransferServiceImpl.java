@@ -9,7 +9,7 @@ import com.linkermak.cloud_file_storage.dto.transfer.service.PreparedUpload;
 import com.linkermak.cloud_file_storage.dto.transfer.web.DownloadedResource;
 import com.linkermak.cloud_file_storage.dto.web.controller.StorageResource;
 import com.linkermak.cloud_file_storage.dto.web.controller.StorageResourceType;
-import com.linkermak.cloud_file_storage.exceptions.StorageException;
+import com.linkermak.cloud_file_storage.exceptions.repository.StorageException;
 import com.linkermak.cloud_file_storage.exceptions.loader.DuplicateUploadResourceException;
 import com.linkermak.cloud_file_storage.exceptions.loader.MultipartFileEmptyException;
 import com.linkermak.cloud_file_storage.repositories.storage.ObjectStorageRepository;
@@ -75,7 +75,7 @@ public class FileTransferServiceImpl implements FileTransferService {
         Long userId = userProvider.currentUserId();
 
         List<StorageObjectInfo> resources = storageRepository
-                .findResourcesRecursiveByPrefix(userId, normalizedDirectoryPath);
+                .findDescendantsByPrefix(userId, normalizedDirectoryPath);
 
         byte[] zipBytes = createZip(userId, normalizedDirectoryPath, resources);
 
@@ -134,11 +134,11 @@ public class FileTransferServiceImpl implements FileTransferService {
         String preparedDirectoryPath = pathPreparer.prepareDirectoryPath(directoryPath);
         List<PreparedFileUpload> preparedFileUploads = prepareFileUploads(files);
 
-        directoryService.validateDirectoryExists(preparedDirectoryPath);
+        directoryService.validatePreparedDirectoryExists(preparedDirectoryPath);
 
         for (PreparedFileUpload preparedFileUpload : preparedFileUploads) {
-            fileService.validateFileNotExists(preparedDirectoryPath
-                    + preparedFileUpload.normalizedRelativePath());
+            fileService.validatePreparedFileNotExists(preparedDirectoryPath
+                    + preparedFileUpload.preparedRelativeFilePath());
         }
 
         return new PreparedUpload(
@@ -159,16 +159,16 @@ public class FileTransferServiceImpl implements FileTransferService {
                 throw new MultipartFileEmptyException("Multipart file is empty");
             }
 
-            String normalizeFilePath = pathPreparer.prepareFilePath(file.getOriginalFilename());
+            String preparedFilePath = pathPreparer.prepareFilePath(file.getOriginalFilename());
 
-            if (!fileNames.add(normalizeFilePath)) {
+            if (!fileNames.add(preparedFilePath)) {
                 throw new DuplicateUploadResourceException(
-                        "File path:" + normalizeFilePath + " are duplicated");
+                        "File path:" + preparedFilePath + " are duplicated");
             }
 
             preparedFileUploads.add(new PreparedFileUpload(
                     file,
-                    normalizeFilePath
+                    preparedFilePath
             ));
         }
         return preparedFileUploads;
@@ -180,8 +180,8 @@ public class FileTransferServiceImpl implements FileTransferService {
 
         for (PreparedFileUpload file : preparedUpload.files()) {
 
-            String fullPath = preparedUpload.normalizedDirectoryPath()
-                    + file.normalizedRelativePath();
+            String fullPath = preparedUpload.preparedDirectoryPath()
+                    + file.preparedRelativeFilePath();
 
             createParentDirectories(userId, fullPath);
 

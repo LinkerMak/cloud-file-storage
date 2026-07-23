@@ -1,4 +1,4 @@
-package com.linkermak.cloud_file_storage.exceptions;
+package com.linkermak.cloud_file_storage.exceptions.repository;
 
 public class StorageException extends RuntimeException {
     public StorageException(String message) {

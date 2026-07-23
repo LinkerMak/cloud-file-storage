@@ -3,9 +3,10 @@ package com.linkermak.cloud_file_storage.controllers;
 import com.linkermak.cloud_file_storage.dto.web.controller.StorageResource;
 import com.linkermak.cloud_file_storage.services.resource.ResourceService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/resource")
@@ -28,5 +29,22 @@ public class ResourceController {
         return ResponseEntity
                 .noContent()
                 .build();
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<StorageResource>> searchResources(@RequestParam("query") String query) {
+        List<StorageResource> resources = resourceService.searchResources(query);
+        return ResponseEntity
+                .ok()
+                .body(resources);
+    }
+
+    @PostMapping("/move")
+    public ResponseEntity<StorageResource> moveResource(@RequestParam("from") String from,
+                                                        @RequestParam("to") String to) {
+        StorageResource resource = resourceService.moveResource(from, to);
+        return ResponseEntity
+                .ok()
+                .body(resource);
     }
 }

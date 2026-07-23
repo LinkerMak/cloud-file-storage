@@ -8,15 +8,17 @@ import java.util.List;
 
 public interface ObjectStorageRepository {
 
-    StorageObjectInfo getResourceInfoByPath(Long userId, String resourcePath);
+    StorageObjectInfo getResourceInfoByPath(Long userId, String path);
 
-    StorageDownloadObject downloadFile(Long userId, String path);
+    StorageDownloadObject downloadFile(Long userId, String filePath);
 
     void uploadFile(UploadFileRequest fileRequest);
 
     boolean existsFile(Long userId, String filePath);
 
-    void deleteResource(Long userId, String filePath);
+    void deleteResource(Long userId, String path);
+
+    void deleteResources(Long userId, List<String> paths);
 
     boolean existsDirectory(Long userId, String directoryPath);
 
@@ -26,5 +28,5 @@ public interface ObjectStorageRepository {
 
     List<StorageObjectInfo> findResourcesByPrefix(Long userId, String directoryPath);
 
-    List<StorageObjectInfo> findResourcesRecursiveByPrefix(Long userId, String directoryPath);
+    List<StorageObjectInfo> findDescendantsByPrefix(Long userId, String directoryPath);
 }

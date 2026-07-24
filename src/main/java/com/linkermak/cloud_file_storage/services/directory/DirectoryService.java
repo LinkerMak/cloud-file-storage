@@ -11,4 +11,6 @@ public interface DirectoryService {
     StorageResource createDirectory(String directoryPath);
 
     void validatePreparedDirectoryExists(String preparedDirectoryPath);
+
+    void validatePreparedDirectoryNotExists(String preparedDirectoryPath);
 }

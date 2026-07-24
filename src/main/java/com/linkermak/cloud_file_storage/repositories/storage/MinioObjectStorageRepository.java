@@ -1,6 +1,7 @@
 package com.linkermak.cloud_file_storage.repositories.storage;
 
 import com.linkermak.cloud_file_storage.config.properties.MinioProperties;
+import com.linkermak.cloud_file_storage.dto.repositories.storage.MovePair;
 import com.linkermak.cloud_file_storage.dto.repositories.storage.StorageDownloadObject;
 import com.linkermak.cloud_file_storage.dto.repositories.storage.StorageObjectInfo;
 import com.linkermak.cloud_file_storage.dto.repositories.storage.UploadFileRequest;
@@ -169,6 +170,35 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository {
     public boolean existsFile(Long userId, String filePath) {
         String key = pathToKey(userId, filePath);
         return objectExists(key);
+    }
+
+    @Override
+    public void copyResource(Long userId, String fromPath, String toPath) {
+        String fromKey = pathToKey(userId, fromPath);
+        String toKey = pathToKey(userId, toPath);
+        try{
+            minioClient.copyObject(
+                    CopyObjectArgs.builder()
+                            .bucket(bucket)
+                            .object(toKey)
+                            .source(
+                                    SourceObject.builder()
+                                            .bucket(bucket)
+                                            .object(fromKey)
+                                            .build()
+                            )
+                            .build()
+            );
+        } catch(Exception e) {
+            throw new StorageException(
+                    "Failed to copy file from path:" + fromPath +" to path:" + toPath, e
+            );
+        }
+    }
+
+    @Override
+    public void copyResources(Long userId, List<MovePair> movePairs) {
+
     }
 
     @Override

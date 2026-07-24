@@ -4,6 +4,7 @@ import com.linkermak.cloud_file_storage.config.security.CurrentUserProvider;
 import com.linkermak.cloud_file_storage.dto.repositories.storage.StorageObjectInfo;
 import com.linkermak.cloud_file_storage.dto.web.controller.StorageResource;
 import com.linkermak.cloud_file_storage.dto.web.controller.StorageResourceType;
+import com.linkermak.cloud_file_storage.exceptions.resources.InvalidPathException;
 import com.linkermak.cloud_file_storage.exceptions.resources.InvalidQueryException;
 import com.linkermak.cloud_file_storage.exceptions.resources.ResourceAlreadyExistsException;
 import com.linkermak.cloud_file_storage.exceptions.resources.ResourceNotFoundException;
@@ -12,8 +13,6 @@ import com.linkermak.cloud_file_storage.services.directory.DirectoryService;
 import com.linkermak.cloud_file_storage.services.path.StoragePathExtractor;
 import com.linkermak.cloud_file_storage.services.path.preparer.StoragePathPreparer;
 import lombok.RequiredArgsConstructor;
-import org.apache.coyote.BadRequestException;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -89,18 +88,60 @@ public class ResourceServiceImpl implements ResourceService {
 
     @Override
     public StorageResource moveResource(String from, String to) {
-        if(isRename(from, to)) {
+        String trimmedFrom = pathPreparer.trimPath(from);
+        String trimmedTo = pathPreparer.trimPath(to);
 
+        boolean isDirectory = trimmedFrom.endsWith("/");
+
+        return isDirectory
+                ? moveDirectory(trimmedFrom, trimmedTo)
+                : moveFile(trimmedFrom, trimmedTo);
+    }
+
+    private StorageResource moveFile(String from, String to) {
+        if(to.endsWith("/")) {
+            throw new InvalidPathException(
+                    "Trying to move file with path:" + from + " to directory path:" + to
+            );
         }
 
-        return move();
+        String preparedFromFilePath = pathPreparer.prepareFilePath(from);
+        String preparedToFilePath = pathPreparer.prepareFilePath(to);
+
+        validatePreparedFileExists(preparedFromFilePath);
+        validatePreparedFileNotExists(preparedToFilePath);
+
+        Long userId = userProvider.currentUserId();
+
+        storageRepository.copyResource(
+                userId,
+                preparedFromFilePath,
+                preparedToFilePath
+        );
+
+        validatePreparedFileExists(preparedToFilePath);
+
+        storageRepository.deleteResource(userId, preparedFromFilePath);
+
+        return getResource(preparedToFilePath);
     }
 
-    private boolean isRename(String from, String to) {
 
-    }
+    private StorageResource moveDirectory(String from, String to) {
+        if(!to.endsWith("/")) {
+            throw new InvalidPathException(
+                    "Trying to move directory with path:" + from + " to file path:" + to
+            );
+        }
 
-    private StorageResource move(String from, String to) {
+        String preparedFromDirectoryPath = pathPreparer.prepareDirectoryPath(from);
+        String preparedToDirectoryPath = pathPreparer.prepareDirectoryPath(to);
+
+        directoryService.validatePreparedDirectoryExists(preparedFromDirectoryPath);
+        directoryService.validatePreparedDirectoryNotExists(preparedToDirectoryPath);
+
+        Long userId = userProvider.currentUserId();
+
 
     }
 

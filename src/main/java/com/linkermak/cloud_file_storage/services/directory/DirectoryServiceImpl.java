@@ -97,4 +97,11 @@ public class DirectoryServiceImpl implements DirectoryService {
         }
     }
 
+    @Override
+    public void validatePreparedDirectoryNotExists(String preparedDirectoryPath) {
+        if (storageRepository.existsDirectory(userProvider.currentUserId(), preparedDirectoryPath)) {
+            throw new ResourceAlreadyExistsException("Directory already exists by path:" + preparedDirectoryPath);
+        }
+    }
+
 }

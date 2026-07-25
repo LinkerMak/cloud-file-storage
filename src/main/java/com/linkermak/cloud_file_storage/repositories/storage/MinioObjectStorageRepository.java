@@ -198,7 +198,9 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository {
 
     @Override
     public void copyResources(Long userId, List<MovePair> movePairs) {
-
+        for(MovePair movePair: movePairs) {
+            copyResource(userId, movePair.from(), movePair.to());
+        }
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.linkermak.cloud_file_storage.services.resource;
 
 import com.linkermak.cloud_file_storage.config.security.CurrentUserProvider;
+import com.linkermak.cloud_file_storage.dto.repositories.storage.MovePair;
 import com.linkermak.cloud_file_storage.dto.repositories.storage.StorageObjectInfo;
 import com.linkermak.cloud_file_storage.dto.web.controller.StorageResource;
 import com.linkermak.cloud_file_storage.dto.web.controller.StorageResourceType;
@@ -137,12 +138,53 @@ public class ResourceServiceImpl implements ResourceService {
         String preparedFromDirectoryPath = pathPreparer.prepareDirectoryPath(from);
         String preparedToDirectoryPath = pathPreparer.prepareDirectoryPath(to);
 
+        if(preparedToDirectoryPath.startsWith(preparedFromDirectoryPath)) {
+            throw new InvalidPathException(
+                    "To path starts with from path"
+            );
+        }
+
         directoryService.validatePreparedDirectoryExists(preparedFromDirectoryPath);
         directoryService.validatePreparedDirectoryNotExists(preparedToDirectoryPath);
 
         Long userId = userProvider.currentUserId();
 
+        List<StorageObjectInfo> storageResources = storageRepository.findDescendantsByPrefix(
+                userId,
+                preparedFromDirectoryPath
+        );
 
+        List<MovePair> movePairs = new ArrayList<>();
+        for(StorageObjectInfo resource : storageResources) {
+            String preparedNewResourcePath  =
+                    preparedToDirectoryPath
+                            + resource.path().substring(preparedFromDirectoryPath.length());
+
+            if(preparedNewResourcePath .endsWith("/")) {
+                directoryService.validatePreparedDirectoryNotExists(preparedNewResourcePath );
+            }
+            else {
+                validatePreparedFileNotExists(preparedNewResourcePath );
+            }
+
+            movePairs.add(new MovePair(resource.path(), preparedNewResourcePath));
+        }
+        movePairs.add(new MovePair(preparedFromDirectoryPath, preparedToDirectoryPath));
+
+        storageRepository.copyResources(userId, movePairs);
+
+        List<String> pathsToDelete = movePairs.stream()
+                .map(movePair -> movePair.from())
+                .toList();
+
+        storageRepository.deleteResources(userId, pathsToDelete);
+
+        return new StorageResource(
+                StoragePathExtractor.extractParentPath(to).orElse(""),
+                StoragePathExtractor.extractLastPath(to),
+                null,
+                StorageResourceType.DIRECTORY
+        );
     }
 
     @Override

@@ -46,14 +46,14 @@ public class DirectoryServiceImpl implements DirectoryService {
     private List<StorageResource> generateStorageResources(List<StorageObjectInfo> objectInfoResources) {
         List<StorageResource> storageResources = new ArrayList<>();
         for (StorageObjectInfo resourceInfo : objectInfoResources) {
-            String key = resourceInfo.path();
+            String resourcePath = resourceInfo.path();
 
-            boolean isDirectory = key.endsWith("/");
+            boolean isDirectory = resourcePath.endsWith("/");
 
             storageResources.add(
                     new StorageResource(
-                            StoragePathExtractor.extractParentPath(key).orElse(""),
-                            StoragePathExtractor.extractLastPath(key),
+                            StoragePathExtractor.extractParentPath(resourcePath).orElse(""),
+                            StoragePathExtractor.extractLastPath(resourcePath),
                             isDirectory ? null : resourceInfo.size(),
                             isDirectory ? StorageResourceType.DIRECTORY : StorageResourceType.FILE
                     )

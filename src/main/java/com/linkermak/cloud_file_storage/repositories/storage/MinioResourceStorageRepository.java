@@ -176,7 +176,7 @@ public class MinioResourceStorageRepository implements ResourceStorageRepository
     public void copy(Long userId, String fromPath, String toPath) {
         String fromKey = pathToKey(userId, fromPath);
         String toKey = pathToKey(userId, toPath);
-        try{
+        try {
             minioClient.copyObject(
                     CopyObjectArgs.builder()
                             .bucket(bucket)
@@ -189,16 +189,16 @@ public class MinioResourceStorageRepository implements ResourceStorageRepository
                             )
                             .build()
             );
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new StorageException(
-                    "Failed to copy file from path:" + fromPath +" to path:" + toPath, e
+                    "Failed to copy file from path:" + fromPath + " to path:" + toPath, e
             );
         }
     }
 
     @Override
     public void copyMany(Long userId, List<CopyPair> copyPairs) {
-        for(CopyPair copyPair : copyPairs) {
+        for (CopyPair copyPair : copyPairs) {
             copy(userId, copyPair.from(), copyPair.to());
         }
     }
@@ -229,7 +229,7 @@ public class MinioResourceStorageRepository implements ResourceStorageRepository
                 .map(path -> new DeleteRequest.Object(pathToKey(userId, path)))
                 .toList();
 
-        try{
+        try {
             Iterable<Result<DeleteResult.Error>> errors = minioClient.removeObjects(
                     RemoveObjectsArgs.builder()
                             .bucket(bucket)
@@ -237,14 +237,14 @@ public class MinioResourceStorageRepository implements ResourceStorageRepository
                             .build()
             );
 
-            for(Result<DeleteResult.Error> errorResult : errors) {
+            for (Result<DeleteResult.Error> errorResult : errors) {
                 DeleteResult.Error error = errorResult.get();
                 throw new StorageException("Failed to delete resource by key:" + error.resource()
-                + ", message:" + error);
+                        + ", message:" + error);
             }
-        } catch(StorageException e) {
+        } catch (StorageException e) {
             throw e;
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new StorageException("Failed to delete resources", e);
         }
     }

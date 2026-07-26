@@ -84,8 +84,6 @@ public class FileTransferServiceImpl implements FileTransferService {
         );
     }
 
-
-
     @Override
     public List<StorageResource> uploadResource(String directoryPath, List<MultipartFile> files) throws IOException {
         PreparedUpload preparedUpload = prepareUpload(directoryPath, files);

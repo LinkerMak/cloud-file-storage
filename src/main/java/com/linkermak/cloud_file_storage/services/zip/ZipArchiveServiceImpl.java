@@ -16,7 +16,7 @@ import java.util.zip.ZipOutputStream;
 
 @Service
 @RequiredArgsConstructor
-public class ZipArchiveServiceImpl implements ZipArchiveService{
+public class ZipArchiveServiceImpl implements ZipArchiveService {
 
     private static final int BYTE_BUFFER_SIZE = 8192;
 

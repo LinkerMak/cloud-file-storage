@@ -33,10 +33,10 @@ public class ResourceServiceImpl implements ResourceService {
     private final StoragePathPreparer pathPreparer;
 
     private final StorageResourceMapper resourceMapper;
-    
+
     @Override
     public List<StorageResource> searchResources(String query) {
-        if(query == null || query.isBlank()) {
+        if (query == null || query.isBlank()) {
             throw new InvalidQueryException("Query in null");
         }
         String normalizedQuery = query.trim().toLowerCase();
@@ -47,9 +47,9 @@ public class ResourceServiceImpl implements ResourceService {
         );
 
         return allUserResources.stream()
-                .filter(resource -> 
+                .filter(resource ->
                         resource.path().toLowerCase().contains(normalizedQuery))
-                .map(resource -> 
+                .map(resource ->
                         resourceMapper.toStorageResource(resource)
                 )
                 .toList();
@@ -65,7 +65,7 @@ public class ResourceServiceImpl implements ResourceService {
                 pathPreparer.prepareDirectoryPath(trimmedPath) :
                 pathPreparer.prepareFilePath(trimmedPath);
 
-        if(isDirectory) {
+        if (isDirectory) {
             directoryService.validatePreparedDirectoryExists(preparedPath);
         } else {
             validatePreparedFileExists(preparedPath);
@@ -91,7 +91,8 @@ public class ResourceServiceImpl implements ResourceService {
                 : moveFile(trimmedFrom, trimmedTo);
     }
 
-    private record PreparedMove(String from, String to) {}
+    private record PreparedMove(String from, String to) {
+    }
 
     private StorageResource moveFile(String from, String to) {
         PreparedMove preparedFileMove = prepareFileMove(from, to);
@@ -112,7 +113,7 @@ public class ResourceServiceImpl implements ResourceService {
     }
 
     private PreparedMove prepareFileMove(String from, String to) {
-        if(to.endsWith("/")) {
+        if (to.endsWith("/")) {
             throw new InvalidPathException(
                     "Trying to move file with path:" + from + " to directory path:" + to
             );
@@ -142,7 +143,7 @@ public class ResourceServiceImpl implements ResourceService {
     }
 
     private PreparedMove prepareDirectoryMove(String from, String to) {
-        if(!to.endsWith("/")) {
+        if (!to.endsWith("/")) {
             throw new InvalidPathException(
                     "Trying to move directory with path:" + from + " to file path:" + to
             );
@@ -151,7 +152,7 @@ public class ResourceServiceImpl implements ResourceService {
         String preparedFromDirectoryPath = pathPreparer.prepareDirectoryPath(from);
         String preparedToDirectoryPath = pathPreparer.prepareDirectoryPath(to);
 
-        if(preparedToDirectoryPath.startsWith(preparedFromDirectoryPath)) {
+        if (preparedToDirectoryPath.startsWith(preparedFromDirectoryPath)) {
             throw new InvalidPathException(
                     "To path starts with from path"
             );
@@ -170,16 +171,15 @@ public class ResourceServiceImpl implements ResourceService {
         );
 
         List<CopyPair> copyPairs = new ArrayList<>();
-        for(StorageObjectInfo resource : storageResources) {
-            String preparedNewResourcePath  =
+        for (StorageObjectInfo resource : storageResources) {
+            String preparedNewResourcePath =
                     directoryMove.to()
                             + resource.path().substring(directoryMove.from().length());
 
-            if(preparedNewResourcePath .endsWith("/")) {
-                directoryService.validatePreparedDirectoryNotExists(preparedNewResourcePath );
-            }
-            else {
-                validatePreparedFileNotExists(preparedNewResourcePath );
+            if (preparedNewResourcePath.endsWith("/")) {
+                directoryService.validatePreparedDirectoryNotExists(preparedNewResourcePath);
+            } else {
+                validatePreparedFileNotExists(preparedNewResourcePath);
             }
 
             copyPairs.add(new CopyPair(resource.path(), preparedNewResourcePath));
@@ -228,8 +228,8 @@ public class ResourceServiceImpl implements ResourceService {
 
         List<String> pathsToDelete = new ArrayList<>(
                 resources.stream()
-                .map(info -> info.path())
-                .toList());
+                        .map(info -> info.path())
+                        .toList());
         pathsToDelete.add(preparedDirectoryPath);
 
         resourceStorageRepository.deleteMany(

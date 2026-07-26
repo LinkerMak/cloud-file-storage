@@ -1,14 +1,14 @@
 package com.linkermak.cloud_file_storage.repositories.storage;
 
 
-import com.linkermak.cloud_file_storage.dto.repositories.storage.MovePair;
+import com.linkermak.cloud_file_storage.dto.repositories.storage.CopyPair;
 import com.linkermak.cloud_file_storage.dto.repositories.storage.StorageDownloadObject;
 import com.linkermak.cloud_file_storage.dto.repositories.storage.StorageObjectInfo;
 import com.linkermak.cloud_file_storage.dto.repositories.storage.UploadFileRequest;
 
 import java.util.List;
 
-public interface ObjectStorageRepository {
+public interface ResourceStorageRepository {
 
     StorageDownloadObject downloadFile(Long userId, String filePath);
 
@@ -16,13 +16,13 @@ public interface ObjectStorageRepository {
 
     boolean existsFile(Long userId, String filePath);
 
-    void copyResource(Long userId, String from, String to);
+    void copy(Long userId, String from, String to);
 
-    void copyResources(Long userId, List<MovePair> movePairs);
+    void copyMany(Long userId, List<CopyPair> copyPairs);
 
-    void deleteResource(Long userId, String path);
+    void delete(Long userId, String path);
 
-    void deleteResources(Long userId, List<String> paths);
+    void deleteMany(Long userId, List<String> paths);
 
     boolean existsDirectory(Long userId, String directoryPath);
 
@@ -30,9 +30,9 @@ public interface ObjectStorageRepository {
 
     void createDirectory(Long userId, String directoryPath);
 
-    StorageObjectInfo getResourceInfoByPath(Long userId, String path);
+    StorageObjectInfo getInfo(Long userId, String path);
 
-    List<StorageObjectInfo> findResourcesByPrefix(Long userId, String directoryPath);
+    List<StorageObjectInfo> findByPrefix(Long userId, String directoryPath);
 
     List<StorageObjectInfo> findDescendantsByPrefix(Long userId, String directoryPath);
 }

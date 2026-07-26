@@ -3,17 +3,16 @@ package com.linkermak.cloud_file_storage.services.directory;
 import com.linkermak.cloud_file_storage.config.security.CurrentUserProvider;
 import com.linkermak.cloud_file_storage.dto.repositories.storage.StorageObjectInfo;
 import com.linkermak.cloud_file_storage.dto.web.controller.StorageResource;
-import com.linkermak.cloud_file_storage.dto.web.controller.StorageResourceType;
 import com.linkermak.cloud_file_storage.exceptions.resources.ResourceAlreadyExistsException;
 import com.linkermak.cloud_file_storage.exceptions.resources.ResourceNotFoundException;
-import com.linkermak.cloud_file_storage.repositories.storage.ObjectStorageRepository;
+import com.linkermak.cloud_file_storage.mappers.StorageResourceMapper;
+import com.linkermak.cloud_file_storage.repositories.storage.ResourceStorageRepository;
 import com.linkermak.cloud_file_storage.services.path.StoragePathExtractor;
 import com.linkermak.cloud_file_storage.services.path.preparer.StoragePathPreparer;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,85 +20,65 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class DirectoryServiceImpl implements DirectoryService {
 
-    private final ObjectStorageRepository storageRepository;
+    private final ResourceStorageRepository resourceStorageRepository;
 
     private final CurrentUserProvider userProvider;
 
     private final StoragePathPreparer pathPreparer;
 
+    private final StorageResourceMapper resourceMapper;
+
     @Override
-    public List<StorageResource> getDirectoryContent(String pathDirectory) {
-        String normalizePath = pathPreparer.prepareDirectoryPath(pathDirectory);
+    public List<StorageResource> getDirectoryContent(String directoryPath) {
+        String preparedDirectoryPath = pathPreparer.prepareDirectoryPath(directoryPath);
 
         Long userId = userProvider.currentUserId();
 
-        if (!storageRepository.existsDirectory(userId, normalizePath)) {
-            throw new ResourceNotFoundException("Directory not found by path:" + normalizePath);
-        }
+        validatePreparedDirectoryExists(preparedDirectoryPath);
 
         List<StorageObjectInfo> objectInfoResources =
-                storageRepository.findResourcesByPrefix(userId, normalizePath);
+                resourceStorageRepository.findByPrefix(userId, preparedDirectoryPath);
 
-        return generateStorageResources(objectInfoResources);
+        return resourceMapper.toStorageResources(objectInfoResources);
     }
-
-    private List<StorageResource> generateStorageResources(List<StorageObjectInfo> objectInfoResources) {
-        List<StorageResource> storageResources = new ArrayList<>();
-        for (StorageObjectInfo resourceInfo : objectInfoResources) {
-            String resourcePath = resourceInfo.path();
-
-            boolean isDirectory = resourcePath.endsWith("/");
-
-            storageResources.add(
-                    new StorageResource(
-                            StoragePathExtractor.extractParentPath(resourcePath).orElse(""),
-                            StoragePathExtractor.extractLastPath(resourcePath),
-                            isDirectory ? null : resourceInfo.size(),
-                            isDirectory ? StorageResourceType.DIRECTORY : StorageResourceType.FILE
-                    )
-            );
-        }
-
-        return storageResources;
-    }
-
 
     @Override
     @Transactional
-    public StorageResource createDirectory(String pathDirectory) {
-        String normalizePath = pathPreparer.prepareDirectoryPath(pathDirectory);
+    public StorageResource createDirectory(String directoryPath) {
+        String preparedDirectoryPath = pathPreparer.prepareDirectoryPath(directoryPath);
 
         Long userId = userProvider.currentUserId();
-        Optional<String> parentPath = StoragePathExtractor.extractParentPath(normalizePath);
+
+        validateCreateDirectory(userId, preparedDirectoryPath);
+
+        resourceStorageRepository.createDirectory(userId, preparedDirectoryPath);
+
+        return resourceMapper.toDirectoryResource(preparedDirectoryPath);
+    }
+
+    private void validateCreateDirectory(Long userId, String preparedDirectoryPath) {
+        Optional<String> parentPath = StoragePathExtractor.extractParentPath(preparedDirectoryPath);
 
         if (parentPath.isPresent()
-                && !storageRepository.existsDirectory(userId, parentPath.get())) {
-            throw new ResourceNotFoundException("Parent directory not found by path:" + normalizePath);
+                && !resourceStorageRepository.existsDirectory(userId, parentPath.get())) {
+            throw new ResourceNotFoundException("Parent directory not found by path:" + preparedDirectoryPath);
         }
 
-        if (storageRepository.existsDirectory(userId, normalizePath)) {
-            throw new ResourceAlreadyExistsException("Directory already exists by path:" + normalizePath);
+        if (resourceStorageRepository.existsDirectory(userId, preparedDirectoryPath)) {
+            throw new ResourceAlreadyExistsException("Directory already exists by path:" + preparedDirectoryPath);
         }
-
-        storageRepository.createDirectory(userId, normalizePath);
-        return new StorageResource(
-                parentPath.orElse(""),
-                StoragePathExtractor.extractLastPath(normalizePath),
-                null,
-                StorageResourceType.DIRECTORY
-        );
     }
 
     @Override
     public void validatePreparedDirectoryExists(String preparedDirectoryPath) {
-        if (!storageRepository.existsDirectory(userProvider.currentUserId(), preparedDirectoryPath)) {
+        if (!resourceStorageRepository.existsDirectory(userProvider.currentUserId(), preparedDirectoryPath)) {
             throw new ResourceNotFoundException("Directory not found by path:" + preparedDirectoryPath);
         }
     }
 
     @Override
     public void validatePreparedDirectoryNotExists(String preparedDirectoryPath) {
-        if (storageRepository.existsDirectory(userProvider.currentUserId(), preparedDirectoryPath)) {
+        if (resourceStorageRepository.existsDirectory(userProvider.currentUserId(), preparedDirectoryPath)) {
             throw new ResourceAlreadyExistsException("Directory already exists by path:" + preparedDirectoryPath);
         }
     }

@@ -1,6 +1,6 @@
 package com.linkermak.cloud_file_storage.services.authentication.userdetails;
 
-import com.linkermak.cloud_file_storage.repositories.authentication.UserRepository;
+import com.linkermak.cloud_file_storage.repositories.users.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

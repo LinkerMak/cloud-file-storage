@@ -1,7 +1,7 @@
 package com.linkermak.cloud_file_storage.repositories.storage;
 
 import com.linkermak.cloud_file_storage.config.properties.MinioProperties;
-import com.linkermak.cloud_file_storage.dto.repositories.storage.MovePair;
+import com.linkermak.cloud_file_storage.dto.repositories.storage.CopyPair;
 import com.linkermak.cloud_file_storage.dto.repositories.storage.StorageDownloadObject;
 import com.linkermak.cloud_file_storage.dto.repositories.storage.StorageObjectInfo;
 import com.linkermak.cloud_file_storage.dto.repositories.storage.UploadFileRequest;
@@ -20,18 +20,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Repository
-public class MinioObjectStorageRepository implements ObjectStorageRepository {
+public class MinioResourceStorageRepository implements ResourceStorageRepository {
 
     private final MinioClient minioClient;
     private final String bucket;
 
-    public MinioObjectStorageRepository(MinioClient minioClient, MinioProperties properties) {
+    public MinioResourceStorageRepository(MinioClient minioClient, MinioProperties properties) {
         this.minioClient = minioClient;
         this.bucket = properties.getBucket();
     }
 
     @Override
-    public StorageObjectInfo getResourceInfoByPath(Long userId, String resourcePath) {
+    public StorageObjectInfo getInfo(Long userId, String resourcePath) {
         String key = pathToKey(userId, resourcePath);
         try {
             StatObjectResponse stat = minioClient.statObject(
@@ -110,7 +110,7 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository {
     }
 
     @Override
-    public List<StorageObjectInfo> findResourcesByPrefix(Long userId, String path) {
+    public List<StorageObjectInfo> findByPrefix(Long userId, String path) {
         return findResourcesByPrefix(userId, path, false);
     }
 
@@ -173,7 +173,7 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository {
     }
 
     @Override
-    public void copyResource(Long userId, String fromPath, String toPath) {
+    public void copy(Long userId, String fromPath, String toPath) {
         String fromKey = pathToKey(userId, fromPath);
         String toKey = pathToKey(userId, toPath);
         try{
@@ -197,14 +197,14 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository {
     }
 
     @Override
-    public void copyResources(Long userId, List<MovePair> movePairs) {
-        for(MovePair movePair: movePairs) {
-            copyResource(userId, movePair.from(), movePair.to());
+    public void copyMany(Long userId, List<CopyPair> copyPairs) {
+        for(CopyPair copyPair : copyPairs) {
+            copy(userId, copyPair.from(), copyPair.to());
         }
     }
 
     @Override
-    public void deleteResource(Long userId, String path) {
+    public void delete(Long userId, String path) {
         String key = pathToKey(userId, path);
         try {
             minioClient.removeObject(
@@ -224,7 +224,7 @@ public class MinioObjectStorageRepository implements ObjectStorageRepository {
     }
 
     @Override
-    public void deleteResources(Long userId, List<String> paths) {
+    public void deleteMany(Long userId, List<String> paths) {
         List<DeleteRequest.Object> objects = paths.stream()
                 .map(path -> new DeleteRequest.Object(pathToKey(userId, path)))
                 .toList();

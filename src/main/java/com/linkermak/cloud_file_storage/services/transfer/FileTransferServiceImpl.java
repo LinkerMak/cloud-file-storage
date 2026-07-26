@@ -8,45 +8,42 @@ import com.linkermak.cloud_file_storage.dto.transfer.service.PreparedFileUpload;
 import com.linkermak.cloud_file_storage.dto.transfer.service.PreparedUpload;
 import com.linkermak.cloud_file_storage.dto.transfer.web.DownloadedResource;
 import com.linkermak.cloud_file_storage.dto.web.controller.StorageResource;
-import com.linkermak.cloud_file_storage.dto.web.controller.StorageResourceType;
-import com.linkermak.cloud_file_storage.exceptions.repository.StorageException;
 import com.linkermak.cloud_file_storage.exceptions.loader.DuplicateUploadResourceException;
 import com.linkermak.cloud_file_storage.exceptions.loader.MultipartFileEmptyException;
-import com.linkermak.cloud_file_storage.repositories.storage.ObjectStorageRepository;
+import com.linkermak.cloud_file_storage.mappers.StorageResourceMapper;
+import com.linkermak.cloud_file_storage.repositories.storage.ResourceStorageRepository;
 import com.linkermak.cloud_file_storage.services.directory.DirectoryService;
 import com.linkermak.cloud_file_storage.services.path.StoragePathExtractor;
 import com.linkermak.cloud_file_storage.services.path.preparer.StoragePathPreparer;
 import com.linkermak.cloud_file_storage.services.resource.ResourceService;
+import com.linkermak.cloud_file_storage.services.zip.ZipArchiveService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 @Service
 @RequiredArgsConstructor
 public class FileTransferServiceImpl implements FileTransferService {
 
-    private static final int BYTE_BUFFER_SIZE = 8192;
-
     private final DirectoryService directoryService;
-    private final ResourceService fileService;
+    private final ResourceService resourceService;
+    private final ZipArchiveService zipArchiveService;
 
-    private final ObjectStorageRepository storageRepository;
+    private final ResourceStorageRepository storageRepository;
 
     private final CurrentUserProvider userProvider;
 
     private final StoragePathPreparer pathPreparer;
+
+    private final StorageResourceMapper resourceMapper;
 
     @Override
     public DownloadedResource downloadResource(String path) {
@@ -77,52 +74,17 @@ public class FileTransferServiceImpl implements FileTransferService {
         List<StorageObjectInfo> resources = storageRepository
                 .findDescendantsByPrefix(userId, normalizedDirectoryPath);
 
-        byte[] zipBytes = createZip(userId, normalizedDirectoryPath, resources);
+        byte[] zipBytes = zipArchiveService.
+                createZip(userId, normalizedDirectoryPath, resources);
 
         return new DownloadedResource(
-                directoryPath,
+                normalizedDirectoryPath,
                 new ByteArrayResource(zipBytes),
                 zipBytes.length
         );
     }
 
-    private byte[] createZip(Long userId, String directoryPath, List<StorageObjectInfo> resources) {
-        try (ByteArrayOutputStream byteArrayOutputStream =
-                     new ByteArrayOutputStream();
-             ZipOutputStream zipOutputStream =
-                     new ZipOutputStream(byteArrayOutputStream)) {
 
-            byte[] buffer = new byte[BYTE_BUFFER_SIZE];
-
-            for (StorageObjectInfo objectInfo : resources) {
-                String path = objectInfo.path();
-
-                if (path.endsWith("/")) {
-                    continue;
-                }
-
-                StorageDownloadObject downloadedFile = storageRepository
-                        .downloadFile(userId, path);
-
-                String zipEntryName = path.substring(directoryPath.length());
-                try (InputStream inputStream = downloadedFile.inputStream()) {
-                    zipOutputStream.putNextEntry(new ZipEntry(zipEntryName));
-
-                    int read;
-                    while ((read = inputStream.read(buffer)) != -1) {
-                        zipOutputStream.write(buffer, 0, read);
-                    }
-
-                    zipOutputStream.closeEntry();
-                }
-            }
-
-            zipOutputStream.finish();
-            return byteArrayOutputStream.toByteArray();
-        } catch (Exception e) {
-            throw new StorageException("Failed to create zip archive for directory:" + directoryPath, e);
-        }
-    }
 
     @Override
     public List<StorageResource> uploadResource(String directoryPath, List<MultipartFile> files) throws IOException {
@@ -137,7 +99,7 @@ public class FileTransferServiceImpl implements FileTransferService {
         directoryService.validatePreparedDirectoryExists(preparedDirectoryPath);
 
         for (PreparedFileUpload preparedFileUpload : preparedFileUploads) {
-            fileService.validatePreparedFileNotExists(preparedDirectoryPath
+            resourceService.validatePreparedFileNotExists(preparedDirectoryPath
                     + preparedFileUpload.preparedRelativeFilePath());
         }
 
@@ -193,12 +155,9 @@ public class FileTransferServiceImpl implements FileTransferService {
                     file.source().getContentType()
             ));
 
-            storageResources.add(new StorageResource(
-                    StoragePathExtractor.extractParentPath(fullPath).orElse(""),
-                    StoragePathExtractor.extractLastPath(fullPath),
-                    file.source().getSize(),
-                    StorageResourceType.FILE
-            ));
+            storageResources.add(
+                    resourceMapper.toFileResource(fullPath, file.source().getSize())
+            );
         }
 
         return storageResources;

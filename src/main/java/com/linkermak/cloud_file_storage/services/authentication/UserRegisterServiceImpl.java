@@ -3,7 +3,7 @@ package com.linkermak.cloud_file_storage.services.authentication;
 import com.linkermak.cloud_file_storage.dto.web.authentication.signrequest.SignUpRequest;
 import com.linkermak.cloud_file_storage.exceptions.login.UserAlreadyExistsException;
 import com.linkermak.cloud_file_storage.models.User;
-import com.linkermak.cloud_file_storage.repositories.authentication.UserRepository;
+import com.linkermak.cloud_file_storage.repositories.users.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;

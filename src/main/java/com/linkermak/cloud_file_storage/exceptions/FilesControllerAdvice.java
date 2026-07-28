@@ -64,7 +64,7 @@ public class FilesControllerAdvice {
         warningLogConsoleOutput(e);
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
-                .body(new ExceptionResponse("Directory not found"));
+                .body(new ExceptionResponse("Resource not found"));
     }
 
     @ExceptionHandler(ResourceAlreadyExistsException.class)
@@ -72,7 +72,7 @@ public class FilesControllerAdvice {
         warningLogConsoleOutput(e);
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
-                .body(new ExceptionResponse("Directory already exists"));
+                .body(new ExceptionResponse("Resource already exists"));
     }
 
     @ExceptionHandler(StorageException.class)

@@ -1,4 +1,4 @@
-package com.linkermak.cloud_file_storage.controllers;
+package com.linkermak.cloud_file_storage.controllers.user;
 
 import com.linkermak.cloud_file_storage.dto.web.authentication.response.UsernameResponse;
 import org.springframework.http.ResponseEntity;

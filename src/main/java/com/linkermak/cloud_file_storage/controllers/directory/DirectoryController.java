@@ -1,4 +1,4 @@
-package com.linkermak.cloud_file_storage.controllers;
+package com.linkermak.cloud_file_storage.controllers.directory;
 
 import com.linkermak.cloud_file_storage.dto.web.controller.StorageResource;
 import com.linkermak.cloud_file_storage.services.directory.DirectoryService;
@@ -12,20 +12,22 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/directory")
 @RequiredArgsConstructor
-public class DirectoryController {
+public class DirectoryController implements DirectoryApi {
 
     private final DirectoryService directoryService;
 
+    @Override
     @PostMapping
-    ResponseEntity<StorageResource> createDirectory(@RequestParam("path") String path) {
+    public ResponseEntity<StorageResource> createDirectory(@RequestParam("path") String path) {
         StorageResource storageResponse = directoryService.createDirectory(path);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(storageResponse);
     }
 
+    @Override
     @GetMapping
-    ResponseEntity<List<StorageResource>> getAllResourcesInDirectory(
+    public ResponseEntity<List<StorageResource>> getAllResourcesInDirectory(
             @RequestParam(value = "path", defaultValue = "") String path) {
         List<StorageResource> storageResources = directoryService.getDirectoryContent(path);
         return ResponseEntity

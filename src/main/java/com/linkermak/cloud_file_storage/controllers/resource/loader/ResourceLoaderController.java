@@ -1,4 +1,4 @@
-package com.linkermak.cloud_file_storage.controllers;
+package com.linkermak.cloud_file_storage.controllers.resource.loader;
 
 import com.linkermak.cloud_file_storage.dto.transfer.web.DownloadedResource;
 import com.linkermak.cloud_file_storage.dto.web.controller.StorageResource;
@@ -16,10 +16,11 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/resource")
 @RequiredArgsConstructor
-public class ResourceLoaderController {
+public class ResourceLoaderController implements ResourceLoaderApi {
 
     private final FileTransferService fileTransferService;
 
+    @Override
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<List<StorageResource>> uploadResource(@RequestParam("path") String path,
                                                                 @RequestParam("object") List<MultipartFile> files) throws IOException {
@@ -29,6 +30,7 @@ public class ResourceLoaderController {
                 .body(storageResources);
     }
 
+    @Override
     @GetMapping("/download")
     public ResponseEntity<Resource> downloadResource(@RequestParam("path") String path) {
         DownloadedResource downloadedResource = fileTransferService.downloadResource(path);

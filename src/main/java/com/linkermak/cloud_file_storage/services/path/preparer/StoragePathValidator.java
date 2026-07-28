@@ -23,6 +23,8 @@ public final class StoragePathValidator {
             return;
         }
 
+        System.out.println(path);
+        System.out.println(!path.endsWith("/"));
         if (!path.endsWith("/")) {
             throw new InvalidPathException("Directory path must end with '/'");
         }
@@ -49,11 +51,6 @@ public final class StoragePathValidator {
         String[] segments = path.split("/");
 
         for (String segment : segments) {
-            // TODO: возможно лучше isBlank(), надо потестить
-            if (segment.isEmpty()) {
-                continue;
-            }
-
             if (segment.equals(".") || segment.equals("..")) {
                 throw new InvalidPathException("Path must not contain '.' or '..' segments");
             }

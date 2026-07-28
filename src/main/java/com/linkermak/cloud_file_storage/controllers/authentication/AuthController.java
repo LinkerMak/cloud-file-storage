@@ -1,4 +1,4 @@
-package com.linkermak.cloud_file_storage.controllers;
+package com.linkermak.cloud_file_storage.controllers.authentication;
 
 import com.linkermak.cloud_file_storage.config.properties.SessionProperties;
 import com.linkermak.cloud_file_storage.controllers.cookie.CookieValueExtractor;

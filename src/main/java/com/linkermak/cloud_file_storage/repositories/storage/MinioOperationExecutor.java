@@ -18,34 +18,34 @@ public class MinioOperationExecutor {
     }
 
     public <T> T execute(ThrowingSupplier<T> action, String errorMessage) {
-        try {
+        try{
             return action.get();
-        } catch (ErrorResponseException e) {
+        } catch(ErrorResponseException e) {
             throw wrapMinioException(errorMessage, e);
-        } catch (Exception e) {
+        } catch(Exception e) {
             throw new StorageException(errorMessage, e);
         }
     }
 
     public void execute(ThrowingRunnable action, String errorMessage) {
-        try {
+        try{
             action.run();
-        } catch (ErrorResponseException e) {
+        } catch(ErrorResponseException e) {
             throw wrapMinioException(errorMessage, e);
-        } catch (Exception e) {
+        } catch(Exception e) {
             throw new StorageException(errorMessage, e);
         }
     }
 
     public boolean executeBoolean(ThrowingSupplier<Boolean> action, String errorMessage) {
-        try {
+        try{
             return action.get();
-        } catch (ErrorResponseException e) {
+        } catch(ErrorResponseException e) {
             if ("NoSuchKey".equals(e.errorResponse().code())) {
                 return false;
             }
             throw new StorageException(errorMessage, e);
-        } catch (Exception e) {
+        } catch(Exception e) {
             throw new StorageException(errorMessage, e);
         }
     }

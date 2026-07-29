@@ -60,19 +60,19 @@ public class MinioResourceStorageRepository implements ResourceStorageRepository
 
         StatObjectResponse stat = executor.execute(
                 () -> minioClient.statObject(
-                        StatObjectArgs.builder()
-                                .bucket(bucket)
-                                .object(key)
-                                .build()),
+                StatObjectArgs.builder()
+                        .bucket(bucket)
+                        .object(key)
+                        .build()),
                 "Failed to download file by key:" + key
         );
 
         InputStream inputStream = executor.execute(
                 () -> minioClient.getObject(
-                        GetObjectArgs.builder()
-                                .bucket(bucket)
-                                .object(key)
-                                .build()),
+                GetObjectArgs.builder()
+                        .bucket(bucket)
+                        .object(key)
+                        .build()),
                 "Failed to download file by key:" + key
         );
 
@@ -118,11 +118,11 @@ public class MinioResourceStorageRepository implements ResourceStorageRepository
 
         Iterable<Result<Item>> results = executor.execute(
                 () -> minioClient.listObjects(
-                        ListObjectsArgs.builder()
-                                .bucket(bucket)
-                                .prefix(key)
-                                .recursive(recursive)
-                                .build()
+                ListObjectsArgs.builder()
+                        .bucket(bucket)
+                        .prefix(key)
+                        .recursive(recursive)
+                        .build()
                 ),
                 "Failed to find resources by key:" + key
         );
@@ -165,7 +165,7 @@ public class MinioResourceStorageRepository implements ResourceStorageRepository
                                 .stream(new ByteArrayInputStream(new byte[0]), 0L, -1L)
                                 .build()),
                 "Failed to create directory by key:" + key
-        );
+            );
     }
 
     @Override

@@ -7,8 +7,6 @@ import com.linkermak.cloud_file_storage.dto.repositories.storage.StorageObjectIn
 import com.linkermak.cloud_file_storage.dto.repositories.storage.UploadFileRequest;
 import com.linkermak.cloud_file_storage.exceptions.repository.StorageException;
 import io.minio.*;
-import io.minio.errors.ErrorResponseException;
-import io.minio.errors.MinioException;
 import io.minio.messages.DeleteRequest;
 import io.minio.messages.DeleteResult;
 import io.minio.messages.Item;
@@ -23,85 +21,86 @@ import java.util.List;
 public class MinioResourceStorageRepository implements ResourceStorageRepository {
 
     private final MinioClient minioClient;
+
     private final String bucket;
 
-    public MinioResourceStorageRepository(MinioClient minioClient, MinioProperties properties) {
+    private final MinioOperationExecutor executor;
+
+    public MinioResourceStorageRepository(MinioClient minioClient,
+                                          MinioProperties properties,
+                                          MinioOperationExecutor executor) {
         this.minioClient = minioClient;
         this.bucket = properties.getBucket();
+        this.executor = executor;
     }
 
     @Override
     public StorageObjectInfo getInfo(Long userId, String resourcePath) {
         String key = pathToKey(userId, resourcePath);
-        try {
-            StatObjectResponse stat = minioClient.statObject(
-                    StatObjectArgs.builder()
-                            .bucket(bucket)
-                            .object(key)
-                            .build()
-            );
 
-            return new StorageObjectInfo(
-                    resourcePath,
-                    stat.size()
-            );
-        } catch (ErrorResponseException e) {
-            if ("NoSuchKey".equals(e.errorResponse().code())) {
-                throw new StorageException("Resource not found by key:" + key, e);
-            }
-            throw new StorageException("Failed to get resource information by key:" + key, e);
-        } catch (Exception e) {
-            throw new StorageException("Failed to get resource information by key:" + key, e);
-        }
+        StatObjectResponse stat = executor.execute(
+                () -> minioClient.statObject(
+                        StatObjectArgs.builder()
+                                .bucket(bucket)
+                                .object(key)
+                                .build()
+                ),
+                "Failed to get resource information by key:" + key
+        );
+
+        return new StorageObjectInfo(
+                resourcePath,
+                stat.size()
+        );
     }
 
     @Override
     public StorageDownloadObject downloadFile(Long userId, String path) {
         String key = pathToKey(userId, path);
-        try {
-            StatObjectResponse stat = minioClient.statObject(
-                    StatObjectArgs.builder()
-                            .bucket(bucket)
-                            .object(key)
-                            .build()
-            );
 
-            InputStream inputStream = minioClient.getObject(
-                    GetObjectArgs.builder()
-                            .bucket(bucket)
-                            .object(key)
-                            .build()
-            );
+        StatObjectResponse stat = executor.execute(
+                () -> minioClient.statObject(
+                        StatObjectArgs.builder()
+                                .bucket(bucket)
+                                .object(key)
+                                .build()),
+                "Failed to download file by key:" + key
+        );
 
-            return new StorageDownloadObject(
-                    path,
-                    inputStream,
-                    stat.size()
-            );
-        } catch (ErrorResponseException e) {
-            if ("NoSuchKey".equals(e.errorResponse().code())) {
-                throw new StorageException("File not found by key:" + key, e);
-            }
-            throw new StorageException("Failed to download file by key:" + key, e);
-        } catch (Exception e) {
-            throw new StorageException("Failed to download file by key:" + key, e);
-        }
+        InputStream inputStream = executor.execute(
+                () -> minioClient.getObject(
+                        GetObjectArgs.builder()
+                                .bucket(bucket)
+                                .object(key)
+                                .build()),
+                "Failed to download file by key:" + key
+        );
+
+        return new StorageDownloadObject(
+                path,
+                inputStream,
+                stat.size()
+        );
     }
 
     @Override
     public void uploadFile(UploadFileRequest fileRequest) {
         String key = pathToKey(fileRequest.userId(), fileRequest.filePath());
-        try (InputStream in = fileRequest.inputStream()) {
-            PutObjectArgs.Builder builder = PutObjectArgs.builder()
-                    .bucket(bucket)
-                    .object(key)
-                    .stream(in, fileRequest.size(), -1L)
-                    .contentType(fileRequest.contentType());
 
-            minioClient.putObject(builder.build());
-        } catch (Exception e) {
-            throw new StorageException("Failed to upload file by key:" + key, e);
-        }
+        executor.execute(
+                () -> {
+                    try (InputStream in = fileRequest.inputStream()) {
+                        PutObjectArgs.Builder builder = PutObjectArgs.builder()
+                                .bucket(bucket)
+                                .object(key)
+                                .stream(in, fileRequest.size(), -1L)
+                                .contentType(fileRequest.contentType());
+
+                        minioClient.putObject(builder.build());
+                    }
+                },
+                "Failed to upload file by key:" + key
+        );
     }
 
     @Override
@@ -116,35 +115,40 @@ public class MinioResourceStorageRepository implements ResourceStorageRepository
 
     public List<StorageObjectInfo> findResourcesByPrefix(Long userId, String path, boolean recursive) {
         String key = pathToKey(userId, path);
-        try {
-            Iterable<Result<Item>> results = minioClient.listObjects(
-                    ListObjectsArgs.builder()
-                            .bucket(bucket)
-                            .prefix(key)
-                            .recursive(recursive)
-                            .build()
-            );
 
-            return prepareResources(results, userId, key);
-        } catch (Exception e) {
-            throw new StorageException("Failed to find resources by key:" + key, e);
-        }
+        Iterable<Result<Item>> results = executor.execute(
+                () -> minioClient.listObjects(
+                        ListObjectsArgs.builder()
+                                .bucket(bucket)
+                                .prefix(key)
+                                .recursive(recursive)
+                                .build()
+                ),
+                "Failed to find resources by key:" + key
+        );
+
+        return prepareResources(results, userId, key);
     }
 
     private List<StorageObjectInfo> prepareResources(Iterable<Result<Item>> results,
                                                      Long userId,
-                                                     String key) throws MinioException {
+                                                     String key) {
         List<StorageObjectInfo> resources = new ArrayList<>();
+
         for (Result<Item> result : results) {
-            Item item = result.get();
+            try {
+                Item item = result.get();
 
-            if (item.objectName().equals(key)) {
-                continue;
+                if (item.objectName().equals(key)) {
+                    continue;
+                }
+
+                String objectKey = item.objectName();
+                String relativeKey = objectKey.substring(userRootPrefix(userId).length());
+                resources.add(new StorageObjectInfo(relativeKey, item.size()));
+            } catch (Exception e) {
+                throw new StorageException("Failed to read listed resources by key:" + key, e);
             }
-
-            String objectKey = item.objectName();
-            String relativeKey = objectKey.substring(userRootPrefix(userId).length());
-            resources.add(new StorageObjectInfo(relativeKey, item.size()));
         }
 
         return resources;
@@ -153,17 +157,15 @@ public class MinioResourceStorageRepository implements ResourceStorageRepository
     @Override
     public void createDirectory(Long userId, String directoryPath) {
         String key = pathToKey(userId, directoryPath);
-        try {
-            minioClient.putObject(
-                    PutObjectArgs.builder()
-                            .bucket(bucket)
-                            .object(key)
-                            .stream(new ByteArrayInputStream(new byte[0]), 0L, -1L)
-                            .build()
-            );
-        } catch (Exception e) {
-            throw new StorageException("Failed to create directory by key:" + key, e);
-        }
+        executor.execute(
+                () -> minioClient.putObject(
+                        PutObjectArgs.builder()
+                                .bucket(bucket)
+                                .object(key)
+                                .stream(new ByteArrayInputStream(new byte[0]), 0L, -1L)
+                                .build()),
+                "Failed to create directory by key:" + key
+        );
     }
 
     @Override
@@ -176,24 +178,21 @@ public class MinioResourceStorageRepository implements ResourceStorageRepository
     public void copy(Long userId, String fromPath, String toPath) {
         String fromKey = pathToKey(userId, fromPath);
         String toKey = pathToKey(userId, toPath);
-        try {
-            minioClient.copyObject(
-                    CopyObjectArgs.builder()
-                            .bucket(bucket)
-                            .object(toKey)
-                            .source(
-                                    SourceObject.builder()
-                                            .bucket(bucket)
-                                            .object(fromKey)
-                                            .build()
-                            )
-                            .build()
-            );
-        } catch (Exception e) {
-            throw new StorageException(
-                    "Failed to copy file from path:" + fromPath + " to path:" + toPath, e
-            );
-        }
+        executor.execute(
+                () -> minioClient.copyObject(
+                        CopyObjectArgs.builder()
+                                .bucket(bucket)
+                                .object(toKey)
+                                .source(
+                                        SourceObject.builder()
+                                                .bucket(bucket)
+                                                .object(fromKey)
+                                                .build()
+                                )
+                                .build()
+                ),
+                "Failed to copy file from path:" + fromPath + " to path:" + toPath
+        );
     }
 
     @Override
@@ -206,21 +205,15 @@ public class MinioResourceStorageRepository implements ResourceStorageRepository
     @Override
     public void delete(Long userId, String path) {
         String key = pathToKey(userId, path);
-        try {
-            minioClient.removeObject(
-                    RemoveObjectArgs.builder()
-                            .bucket(bucket)
-                            .object(key)
-                            .build()
-            );
-        } catch (ErrorResponseException e) {
-            if ("NoSuchKey".equals(e.errorResponse().code())) {
-                throw new StorageException("Resource not found by key:" + key, e);
-            }
-            throw new StorageException("Failed to delete resource by key:" + key, e);
-        } catch (Exception e) {
-            throw new StorageException("Failed to delete resource by key:" + key, e);
-        }
+        executor.execute(
+                () -> minioClient.removeObject(
+                        RemoveObjectArgs.builder()
+                                .bucket(bucket)
+                                .object(key)
+                                .build()
+                ),
+                "Failed to delete resource by key:" + key
+        );
     }
 
     @Override
@@ -229,23 +222,36 @@ public class MinioResourceStorageRepository implements ResourceStorageRepository
                 .map(path -> new DeleteRequest.Object(pathToKey(userId, path)))
                 .toList();
 
-        try {
-            Iterable<Result<DeleteResult.Error>> errors = minioClient.removeObjects(
-                    RemoveObjectsArgs.builder()
-                            .bucket(bucket)
-                            .objects(objects)
-                            .build()
-            );
+        Iterable<Result<DeleteResult.Error>> errors = executor.execute(
+                () -> minioClient.removeObjects(
+                        RemoveObjectsArgs.builder()
+                                .bucket(bucket)
+                                .objects(objects)
+                                .build()
+                ),
+                "Failed to delete resources"
+        );
 
-            for (Result<DeleteResult.Error> errorResult : errors) {
+        checkRemoveResult(errors);
+    }
+
+    private void checkRemoveResult(Iterable<Result<DeleteResult.Error>> errors) {
+        List<String> errorMessages = new ArrayList<>();
+
+        for (Result<DeleteResult.Error> errorResult : errors) {
+            try {
                 DeleteResult.Error error = errorResult.get();
-                throw new StorageException("Failed to delete resource by key:" + error.resource()
-                        + ", message:" + error);
+                errorMessages.add(
+                        "Failed to delete resource by key:" + error.resource()
+                                + ", message:" + error.message()
+                );
+            } catch (Exception e) {
+                errorMessages.add("Failed to read delete result: " + e.getMessage());
             }
-        } catch (StorageException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new StorageException("Failed to delete resources", e);
+        }
+
+        if (!errorMessages.isEmpty()) {
+            throw new StorageException(String.join("; ", errorMessages));
         }
     }
 
@@ -257,39 +263,36 @@ public class MinioResourceStorageRepository implements ResourceStorageRepository
             return true;
         }
 
-        try {
-            Iterable<Result<Item>> results = minioClient.listObjects(
-                    ListObjectsArgs.builder()
-                            .bucket(bucket)
-                            .prefix(key)
-                            .maxKeys(1)
-                            .recursive(true)
-                            .build()
-            );
+        return executor.execute(
+                () -> {
+                    Iterable<Result<Item>> results = minioClient.listObjects(
+                            ListObjectsArgs.builder()
+                                    .bucket(bucket)
+                                    .prefix(key)
+                                    .maxKeys(1)
+                                    .recursive(true)
+                                    .build()
+                    );
 
-            return results.iterator().hasNext();
-        } catch (Exception e) {
-            throw new StorageException("Failed to check object existence:" + key, e);
-        }
+                    return results.iterator().hasNext();
+                },
+                "Failed to check object existence:" + key
+        );
     }
 
     private boolean objectExists(String key) {
-        try {
-            minioClient.statObject(
-                    StatObjectArgs.builder()
-                            .bucket(bucket)
-                            .object(key)
-                            .build()
-            );
-            return true;
-        } catch (ErrorResponseException e) {
-            if ("NoSuchKey".equals(e.errorResponse().code())) {
-                return false;
-            }
-            throw new StorageException("Failed to check object existence:" + key, e);
-        } catch (Exception e) {
-            throw new StorageException("Failed to check object existence:" + key, e);
-        }
+        return executor.executeBoolean(
+                () -> {
+                    minioClient.statObject(
+                            StatObjectArgs.builder()
+                                    .bucket(bucket)
+                                    .object(key)
+                                    .build()
+                    );
+                    return true;
+                },
+                "Failed to check object existence by key:" + key
+        );
     }
 
     @Override

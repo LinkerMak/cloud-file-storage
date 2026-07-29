@@ -23,8 +23,6 @@ public final class StoragePathValidator {
             return;
         }
 
-        System.out.println(path);
-        System.out.println(!path.endsWith("/"));
         if (!path.endsWith("/")) {
             throw new InvalidPathException("Directory path must end with '/'");
         }

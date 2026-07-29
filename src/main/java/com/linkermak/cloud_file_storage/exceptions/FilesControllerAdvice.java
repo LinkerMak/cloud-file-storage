@@ -92,10 +92,10 @@ public class FilesControllerAdvice {
     }
 
     private void errorLogConsoleOutput(Exception e) {
-        log.error("Error:reason = {}, message = {}", e, e.getMessage());
+        log.error("Error message: {}", e.getMessage(), e);
     }
 
     private void warningLogConsoleOutput(Exception e) {
-        log.warn("Error:reason = {}, message = {}", e, e.getMessage());
+        log.warn("Warning message: {}", e.getMessage(), e);
     }
 }

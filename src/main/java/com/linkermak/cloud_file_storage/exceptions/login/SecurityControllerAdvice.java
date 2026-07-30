@@ -1,5 +1,6 @@
 package com.linkermak.cloud_file_storage.exceptions.login;
 
+import com.linkermak.cloud_file_storage.controllers.authentication.AuthController;
 import com.linkermak.cloud_file_storage.dto.web.exception.ExceptionResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -11,7 +12,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @Slf4j
-@RestControllerAdvice
+@RestControllerAdvice(basePackageClasses = AuthController.class)
 public class SecurityControllerAdvice {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

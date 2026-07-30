@@ -17,4 +17,5 @@ public interface SessionRepository {
 
     void refreshTTL(String sessionUUID);
 
+    long count();
 }

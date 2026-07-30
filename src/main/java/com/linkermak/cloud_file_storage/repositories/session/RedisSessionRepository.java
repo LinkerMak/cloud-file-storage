@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Duration;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -64,5 +65,11 @@ public class RedisSessionRepository implements SessionRepository {
         redisTemplate.expire(
                 KEY_PREFIX + sessionUUID,
                 Duration.ofSeconds(sessionProperties.getTtlSeconds()));
+    }
+
+    @Override
+    public long count() {
+        Set<String> keys = redisTemplate.keys(KEY_PREFIX + "*");
+        return keys == null ? 0 : keys.size();
     }
 }

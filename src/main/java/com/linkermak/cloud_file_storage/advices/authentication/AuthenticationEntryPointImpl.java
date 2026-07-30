@@ -1,4 +1,4 @@
-package com.linkermak.cloud_file_storage.exceptions.login;
+package com.linkermak.cloud_file_storage.advices.authentication;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

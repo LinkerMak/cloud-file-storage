@@ -7,10 +7,12 @@ import io.minio.MinioClient;
 import io.minio.errors.MinioException;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
+@Profile("storage")
 public class MinioBucketInitializer {
 
     private final MinioClient minioClient;

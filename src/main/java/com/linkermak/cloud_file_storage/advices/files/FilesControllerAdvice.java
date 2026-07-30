@@ -1,4 +1,4 @@
-package com.linkermak.cloud_file_storage.exceptions;
+package com.linkermak.cloud_file_storage.advices.files;
 
 import com.linkermak.cloud_file_storage.dto.web.exception.ExceptionResponse;
 import com.linkermak.cloud_file_storage.exceptions.loader.DuplicateUploadResourceException;
@@ -92,10 +92,10 @@ public class FilesControllerAdvice {
     }
 
     private void errorLogConsoleOutput(Exception e) {
-        log.error("Error message: {}", e.getMessage(), e) ;
+        log.error("Error message: {}", e.getMessage(), e);
     }
 
     private void warningLogConsoleOutput(Exception e) {
-        log.warn("Warning message: {}",e.getMessage(), e);
+        log.warn("Warning message: {}", e.getMessage(), e);
     }
 }

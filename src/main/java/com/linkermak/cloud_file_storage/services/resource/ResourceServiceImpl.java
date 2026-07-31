@@ -49,6 +49,10 @@ public class ResourceServiceImpl implements ResourceService {
         return allUserResources.stream()
                 .filter(resource ->
                         resource.path().toLowerCase().contains(normalizedQuery))
+                .sorted(
+                        (a, b) ->
+                            a.path().compareToIgnoreCase(b.path())
+                )
                 .map(resource ->
                         resourceMapper.toStorageResource(resource)
                 )

@@ -84,13 +84,6 @@ public class AuthLoginControllerTest extends AbstractAuthTest {
                 .andExpect(jsonPath("$.message").value(ValidationMessages.PASSWORD_SIZE));
     }
 
-    private SignInRequest createValidSignInRequest() {
-        return new SignInRequest(
-                USERNAME,
-                PASSWORD
-        );
-    }
-
     private SignInRequest createInvalidCredentialsSignInRequest() {
         return new SignInRequest(
                 USERNAME + INVALID_SUFFIX,

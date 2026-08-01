@@ -8,17 +8,18 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-public class AuthLogoutControllerTest extends AbstractAuthTest {
+public class AuthSessionLifecycleControllerTest extends AbstractAuthTest {
 
     @Autowired
     private SessionProperties sessionProperties;
 
     @Test
-    void logoutReturns204AndClearsCookieAndDeletesSession() throws Exception {
+    void sessionLifecycleShouldAllowMeAndDenyAfterLogout() throws Exception {
         createUser();
 
         Cookie sessionCookie = mockMvc.perform(post("/api/auth/sign-in")
@@ -35,30 +36,47 @@ public class AuthLogoutControllerTest extends AbstractAuthTest {
         assertThat(sessionCookie.getValue()).isNotBlank();
         assertThat(sessionRepository.count()).isEqualTo(1);
 
+        mockMvc.perform(get("/api/user/me")
+                        .cookie(sessionCookie)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value(USERNAME));
+
         mockMvc.perform(post("/api/auth/sign-out")
                         .cookie(sessionCookie))
                 .andDo(print())
-                .andExpect(status().isNoContent())
-                .andExpect(header().exists(HttpHeaders.SET_COOKIE))
-                .andExpect(cookie().exists("SESSION_ID"))
-                .andExpect(cookie().maxAge("SESSION_ID", 0));
+                .andExpect(status().isNoContent());
 
         assertThat(sessionRepository.count()).isEqualTo(0);
 
-        mockMvc.perform(post("/api/auth/sign-out")
-                        .cookie(sessionCookie))
+        mockMvc.perform(get("/api/user/me")
+                        .cookie(sessionCookie)
+                        .accept(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    void logoutReturns401WhenSessionCookieIsMissing() throws Exception {
-        mockMvc.perform(post("/api/auth/sign-out")
-                        .contentType(MediaType.APPLICATION_JSON))
+    void userMeReturns401WithoutSession() throws Exception {
+        mockMvc.perform(get("/api/user/me")
+                        .accept(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isUnauthorized());
+    }
 
-        assertThat(sessionRepository.count()).isEqualTo(0);
+    @Test
+    void userMeReturns401WithInvalidSession() throws Exception {
+        Cookie invalidSessionCookie = new Cookie(
+                sessionProperties.getSessionCookieName(),
+                "invalid-session-id"
+        );
+
+        mockMvc.perform(get("/api/user/me")
+                        .cookie(invalidSessionCookie)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
     }
 
 }

@@ -1,6 +1,7 @@
 package com.linkermak.cloud_file_storage.integration.authentication;
 
 import com.linkermak.cloud_file_storage.dto.web.authentication.UserSession;
+import com.linkermak.cloud_file_storage.dto.web.authentication.signrequest.SignInRequest;
 import com.linkermak.cloud_file_storage.models.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,6 +25,13 @@ public class AbstractAuthTest extends AbstractIntegrationTest {
                 USERNAME,
                 passwordEncoder.encode(PASSWORD)
         ));
+    }
+
+    protected SignInRequest createValidSignInRequest() {
+        return new SignInRequest(
+                USERNAME,
+                PASSWORD
+        );
     }
 
     protected void assertSessionExists(String setCookie) {

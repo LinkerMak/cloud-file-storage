@@ -1,0 +1,84 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    ports:
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cloud-file-storage-app
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - minio
+      - redis
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    env_file:
+      - .env.local
+    environment:
+      SPRING_APP_NAME: ${SPRING_APP_NAME}
+      SERVER_PORT: ${SERVER_PORT}
+
+      DB_URL: ${DB_URL}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DRIVER: ${DB_DRIVER}
+
+      JPA_DDL_AUTO: ${JPA_DDL_AUTO}
+      JPA_DIALECT: ${JPA_DIALECT}
+      JPA_SHOW_SQL: ${JPA_SHOW_SQL}
+      JPA_OPEN_IN_VIEW: ${JPA_OPEN_IN_VIEW}
+
+      FLYWAY_ENABLED: ${FLYWAY_ENABLED}
+      FLYWAY_LOCATIONS: ${FLYWAY_LOCATIONS}
+
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+
+      SESSION_TTL_SECONDS: ${SESSION_TTL_SECONDS}
+      SESSION_TTL_REFRESH_THRESHOLD_SECONDS: ${SESSION_TTL_REFRESH_THRESHOLD_SECONDS}
+      SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME}
+
+      TOMCAT_MAX_SWALLOW_SIZE: ${TOMCAT_MAX_SWALLOW_SIZE}
+      TOMCAT_MAX_PART_COUNT: ${TOMCAT_MAX_PART_COUNT}
+      TOMCAT_MAX_HTTP_FORM_POST_SIZE: ${TOMCAT_MAX_HTTP_FORM_POST_SIZE}
+
+      MULTIPART_ENABLED: ${MULTIPART_ENABLED}
+      MULTIPART_MAX_FILE_SIZE: ${MULTIPART_MAX_FILE_SIZE}
+      MULTIPART_MAX_REQUEST_SIZE: ${MULTIPART_MAX_REQUEST_SIZE}
+
+      MINIO_URL: ${MINIO_URL}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+
+volumes:
+  pgdata:
+  minio-data:

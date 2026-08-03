@@ -4,7 +4,7 @@ target/
 !**/src/test/**/target/
 
 .env.local
-.env.local
+.env
 .env.*.local
 
 ### STS ###

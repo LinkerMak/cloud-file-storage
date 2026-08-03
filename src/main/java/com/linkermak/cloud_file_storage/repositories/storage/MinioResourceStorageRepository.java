@@ -261,6 +261,10 @@ public class MinioResourceStorageRepository implements ResourceStorageRepository
     public boolean existsDirectory(Long id, String directoryPath) {
         String key = pathToKey(id, directoryPath);
 
+        if(key.equals(userRootPrefix(id))) {
+            return true;
+        }
+
         if (objectExists(key)) {
             return true;
         }

@@ -9,6 +9,7 @@ import com.linkermak.cloud_file_storage.exceptions.resources.InvalidPathExceptio
 import com.linkermak.cloud_file_storage.exceptions.resources.InvalidQueryException;
 import com.linkermak.cloud_file_storage.exceptions.resources.ResourceAlreadyExistsException;
 import com.linkermak.cloud_file_storage.exceptions.resources.ResourceNotFoundException;
+import com.linkermak.cloud_file_storage.repositories.storage.batch.result.BatchResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -77,7 +78,7 @@ public class FilesControllerAdvice {
 
     @ExceptionHandler(StorageException.class)
     public ResponseEntity<ExceptionResponse> storageHandler(StorageException e) {
-        errorLogConsoleOutput(e);
+        errorLogConsoleOutputForStorageException(e);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ExceptionResponse("Storage error"));
@@ -89,6 +90,20 @@ public class FilesControllerAdvice {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ExceptionResponse("Unknown error"));
+    }
+
+    private void errorLogConsoleOutputForStorageException(StorageException e) {
+        if (!e.hasBatchResult()) {
+            errorLogConsoleOutput(e);
+            return;
+        }
+
+        BatchResult result = e.getBatchResult();
+        log.error("Batch storage error: {}, {}",
+                result.summaryForLog(),
+                result.detailsForLog(),
+                e
+        );
     }
 
     private void errorLogConsoleOutput(Exception e) {

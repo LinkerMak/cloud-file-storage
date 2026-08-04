@@ -6,6 +6,7 @@ import com.linkermak.cloud_file_storage.dto.repositories.storage.StorageDownload
 import com.linkermak.cloud_file_storage.dto.repositories.storage.StorageObjectInfo;
 import com.linkermak.cloud_file_storage.dto.repositories.storage.UploadFileRequest;
 import com.linkermak.cloud_file_storage.exceptions.repository.StorageException;
+import com.linkermak.cloud_file_storage.repositories.storage.batch.result.BatchResult;
 import io.minio.*;
 import io.minio.messages.DeleteRequest;
 import io.minio.messages.DeleteResult;
@@ -199,9 +200,33 @@ public class MinioResourceStorageRepository implements ResourceStorageRepository
 
     @Override
     public void copyMany(Long userId, List<CopyPair> copyPairs) {
+        BatchResult batchResult = checkCopyManyResults(userId, copyPairs);
+        throwIfHasErrors(batchResult);
+    }
+
+    private BatchResult checkCopyManyResults(Long userId, List<CopyPair> copyPairs) {
+        List<String> failedPairs = new ArrayList<>();
+        List<String> errorMessages = new ArrayList<>();
+
         for (CopyPair copyPair : copyPairs) {
-            copy(userId, copyPair.from(), copyPair.to());
+            try {
+                copy(userId, copyPair.from(), copyPair.to());
+            } catch (Exception e) {
+                failedPairs.add(copyPair.from() + " -> " + copyPair.to());
+                errorMessages.add(
+                        "Failed to copy file from path: " + copyPair.from()
+                                + " to path: " + copyPair.to()
+                                + " , message:" + e.getMessage()
+                );
+            }
         }
+
+        return createBatchResult(
+                "copy",
+                copyPairs.size(),
+                failedPairs,
+                errorMessages
+        );
     }
 
     @Override
@@ -234,15 +259,20 @@ public class MinioResourceStorageRepository implements ResourceStorageRepository
                 "Failed to delete resources"
         );
 
-        checkRemoveResult(errors);
+        throwIfHasErrors(
+                checkRemoveResult(errors, paths)
+        );
     }
 
-    private void checkRemoveResult(Iterable<Result<DeleteResult.Error>> errors) {
+    private BatchResult checkRemoveResult(Iterable<Result<DeleteResult.Error>> errors,
+                                          List<String> requestedPaths) {
         List<String> errorMessages = new ArrayList<>();
+        List<String> failedObjects = new ArrayList<>();
 
         for (Result<DeleteResult.Error> errorResult : errors) {
             try {
                 DeleteResult.Error error = errorResult.get();
+                failedObjects.add(error.resource());
                 errorMessages.add(
                         "Failed to delete resource by key:" + error.resource()
                                 + ", message:" + error.message()
@@ -252,8 +282,36 @@ public class MinioResourceStorageRepository implements ResourceStorageRepository
             }
         }
 
-        if (!errorMessages.isEmpty()) {
-            throw new StorageException(String.join("; ", errorMessages));
+        return createBatchResult(
+                "delete",
+                requestedPaths.size(),
+                failedObjects,
+                errorMessages
+        );
+    }
+
+    private BatchResult createBatchResult(
+            String operation,
+            int requestedCount,
+            List<String> failedItems,
+            List<String> errorMessages
+    ) {
+        int failedCount = failedItems.size();
+        int successCount = requestedCount - failedCount;
+
+        return new BatchResult(
+                operation,
+                requestedCount,
+                successCount,
+                failedCount,
+                failedItems,
+                errorMessages
+        );
+    }
+
+    private void throwIfHasErrors(BatchResult batchResult) {
+        if (batchResult.hasErrors()) {
+            throw new StorageException("Batch operation failed", batchResult);
         }
     }
 
@@ -261,7 +319,7 @@ public class MinioResourceStorageRepository implements ResourceStorageRepository
     public boolean existsDirectory(Long id, String directoryPath) {
         String key = pathToKey(id, directoryPath);
 
-        if(key.equals(userRootPrefix(id))) {
+        if (key.equals(userRootPrefix(id))) {
             return true;
         }
 

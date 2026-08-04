@@ -13,11 +13,13 @@ import com.linkermak.cloud_file_storage.repositories.storage.ResourceStorageRepo
 import com.linkermak.cloud_file_storage.services.directory.DirectoryService;
 import com.linkermak.cloud_file_storage.services.path.preparer.StoragePathPreparer;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ResourceServiceImpl implements ResourceService {
@@ -36,6 +38,8 @@ public class ResourceServiceImpl implements ResourceService {
 
     @Override
     public List<StorageResource> searchResources(String query) {
+        log.debug("Search resources started: query={}", query);
+
         if (query == null || query.isBlank()) {
             throw new InvalidQueryException("Query in null");
         }
@@ -46,21 +50,26 @@ public class ResourceServiceImpl implements ResourceService {
                 BASE_DIRECTORY_PATH
         );
 
-        return allUserResources.stream()
+        List<StorageResource> result = allUserResources.stream()
                 .filter(resource ->
                         resource.path().toLowerCase().contains(normalizedQuery))
                 .sorted(
                         (a, b) ->
-                            a.path().compareToIgnoreCase(b.path())
+                                a.path().compareToIgnoreCase(b.path())
                 )
                 .map(resource ->
                         resourceMapper.toStorageResource(resource)
                 )
                 .toList();
+
+        log.debug("Search resources completed: query={}, resultCount={}", query, result.size());
+        return result;
     }
 
     @Override
     public StorageResource getResource(String path) {
+        log.debug("Get resource started: path={}", path);
+
         String trimmedPath = pathPreparer.trimPath(path);
 
         boolean isDirectory = trimmedPath.endsWith("/");
@@ -80,25 +89,35 @@ public class ResourceServiceImpl implements ResourceService {
                 preparedPath
         );
 
-        return resourceMapper.toStorageResource(objectInfo);
+        StorageResource result = resourceMapper.toStorageResource(objectInfo);
+
+        log.debug("Get resource completed: path={}, isDirectory={}", preparedPath, isDirectory);
+        return result;
     }
 
     @Override
     public StorageResource moveResource(String from, String to) {
+        log.info("Move resource started: from={}, to={}", from, to);
+
         String trimmedFrom = pathPreparer.trimPath(from);
         String trimmedTo = pathPreparer.trimPath(to);
 
         boolean isDirectory = trimmedFrom.endsWith("/");
 
-        return isDirectory
+        StorageResource result = isDirectory
                 ? moveDirectory(trimmedFrom, trimmedTo)
                 : moveFile(trimmedFrom, trimmedTo);
+
+        log.info("Move resource completed: from={}, to={}, isDirectory={}", from, to, isDirectory);
+        return result;
     }
 
     private record PreparedMove(String from, String to) {
     }
 
     private StorageResource moveFile(String from, String to) {
+        log.debug("Move file started: from={}, to={}", from, to);
+
         PreparedMove preparedFileMove = prepareFileMove(from, to);
 
         Long userId = userProvider.currentUserId();
@@ -113,7 +132,10 @@ public class ResourceServiceImpl implements ResourceService {
 
         resourceStorageRepository.delete(userId, preparedFileMove.from());
 
-        return getResource(preparedFileMove.to());
+        StorageResource result = getResource(preparedFileMove.to());
+
+        log.debug("Move file completed: from={}, to={}", preparedFileMove.from(), preparedFileMove.to());
+        return result;
     }
 
     private PreparedMove prepareFileMove(String from, String to) {
@@ -133,6 +155,8 @@ public class ResourceServiceImpl implements ResourceService {
     }
 
     private StorageResource moveDirectory(String from, String to) {
+        log.debug("Move directory started: from={}, to={}", from, to);
+
         PreparedMove preparedDirectoryMove = prepareDirectoryMove(from, to);
 
         Long userId = userProvider.currentUserId();
@@ -143,7 +167,12 @@ public class ResourceServiceImpl implements ResourceService {
 
         deleteCopiedPaths(userId, copyPairs);
 
-        return resourceMapper.toDirectoryResource(preparedDirectoryMove.to());
+        StorageResource result = resourceMapper.toDirectoryResource(preparedDirectoryMove.to());
+
+        log.info("Move directory completed: from={}, to={}, copiedItems={}",
+                preparedDirectoryMove.from(), preparedDirectoryMove.to(), copyPairs.size());
+
+        return result;
     }
 
     private PreparedMove prepareDirectoryMove(String from, String to) {
@@ -203,6 +232,8 @@ public class ResourceServiceImpl implements ResourceService {
 
     @Override
     public void deleteResource(String path) {
+        log.info("Delete resource started: path={}", path);
+
         String trimmedPath = pathPreparer.trimPath(path);
         boolean isDirectory = trimmedPath.endsWith("/");
 
@@ -211,18 +242,26 @@ public class ResourceServiceImpl implements ResourceService {
         } else {
             deleteFile(trimmedPath);
         }
+
+        log.info("Delete resource completed: path={}, isDirectory={}", path, isDirectory);
     }
 
     private void deleteFile(String path) {
+        log.debug("Delete file started: path={}", path);
+
         Long userId = userProvider.currentUserId();
         String preparedPath = pathPreparer.prepareFilePath(path);
 
         validatePreparedFileExists(preparedPath);
 
         resourceStorageRepository.delete(userId, preparedPath);
+
+        log.debug("Delete file completed: path={}", preparedPath);
     }
 
     private void deleteDirectory(String directoryPath) {
+        log.debug("Delete directory started: path={}", directoryPath);
+
         Long userId = userProvider.currentUserId();
         String preparedDirectoryPath = pathPreparer.prepareDirectoryPath(directoryPath);
 
@@ -240,6 +279,9 @@ public class ResourceServiceImpl implements ResourceService {
                 userId,
                 pathsToDelete
         );
+
+        log.info("Delete directory completed: path={}, deletedItems={}",
+                preparedDirectoryPath, pathsToDelete.size());
     }
 
     @Override

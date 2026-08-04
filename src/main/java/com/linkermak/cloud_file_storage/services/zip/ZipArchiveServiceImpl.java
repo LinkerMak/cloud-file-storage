@@ -5,6 +5,7 @@ import com.linkermak.cloud_file_storage.dto.repositories.storage.StorageObjectIn
 import com.linkermak.cloud_file_storage.exceptions.repository.StorageException;
 import com.linkermak.cloud_file_storage.repositories.storage.ResourceStorageRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ZipArchiveServiceImpl implements ZipArchiveService {
@@ -23,6 +25,9 @@ public class ZipArchiveServiceImpl implements ZipArchiveService {
     private final ResourceStorageRepository storageRepository;
 
     public byte[] createZip(Long userId, String directoryPath, List<StorageObjectInfo> resources) {
+        log.info("Create zip started: userId={}, directoryPath={}, resourcesCount={}",
+                userId, directoryPath, resources != null ? resources.size() : null);
+
         try (ByteArrayOutputStream byteArrayOutputStream =
                      new ByteArrayOutputStream();
              ZipOutputStream zipOutputStream =
@@ -47,7 +52,12 @@ public class ZipArchiveServiceImpl implements ZipArchiveService {
             }
 
             zipOutputStream.finish();
-            return byteArrayOutputStream.toByteArray();
+            byte[] result = byteArrayOutputStream.toByteArray();
+
+            log.info("Create zip completed: userId={}, directoryPath={}, zippedSize={}",
+                    userId, directoryPath, result.length);
+
+            return result;
         } catch (Exception e) {
             throw new StorageException("Failed to create zip archive for directory:" + directoryPath, e);
         }
@@ -58,6 +68,9 @@ public class ZipArchiveServiceImpl implements ZipArchiveService {
                                 String directoryPath,
                                 ZipOutputStream zipOutputStream,
                                 byte[] buffer) throws IOException {
+        log.debug("Write file to zip started: userId={}, filePath={}, directoryPath={}",
+                userId, filePath, directoryPath);
+
         StorageDownloadObject downloadedFile = storageRepository
                 .downloadFile(userId, filePath);
 
@@ -72,5 +85,8 @@ public class ZipArchiveServiceImpl implements ZipArchiveService {
 
             zipOutputStream.closeEntry();
         }
+
+        log.debug("Write file to zip completed: userId={}, filePath={}, zipEntryName={}",
+                userId, filePath, zipEntryName);
     }
 }

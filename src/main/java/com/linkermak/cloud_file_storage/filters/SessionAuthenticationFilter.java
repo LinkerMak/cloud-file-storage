@@ -11,6 +11,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Optional;
 
 
+@Slf4j
 public class SessionAuthenticationFilter extends OncePerRequestFilter {
 
     private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
@@ -52,8 +54,14 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getRequestURI();
 
-        return PUBLIC_PATHS.stream()
+        boolean skip = PUBLIC_PATHS.stream()
                 .anyMatch(pattern -> PATH_MATCHER.match(pattern, path));
+
+        if (skip) {
+            log.debug("Session auth filter skipped: method={}, path={}", request.getMethod(), path);
+        }
+
+        return skip;
     }
 
     @Override
@@ -61,13 +69,22 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+        log.debug("Session auth filter started: method={}, path={}", request.getMethod(), request.getRequestURI());
+
         Optional<String> sessionId = CookieValueExtractor.
                 extract(request, sessionProperties.getSessionCookieName());
 
         if (sessionId.isPresent()) {
+            log.debug("Session cookie found: sessionId={}, path={}", sessionId.get(), request.getRequestURI());
+
             Optional<UserSession> userSession = sessionRepository.findById(sessionId.get());
 
             if (userSession.isPresent()) {
+                log.debug("Session loaded successfully: sessionId={}, userId={}, username={}",
+                        sessionId.get(),
+                        userSession.get().getUserId(),
+                        userSession.get().getUsername());
+
                 Authentication auth = buildAuthentication(userSession.get());
                 SecurityContextHolder.getContext().setAuthentication(auth);
                 refreshSessionTTL(sessionId.get());
@@ -100,6 +117,8 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
             if (ttl.compareTo(Duration.ofSeconds(sessionProperties.getTtlRefreshThresholdSeconds())) < 0) {
                 sessionRepository.refreshTTL(sessionUUID);
             }
+
+            log.debug("Session TTL refreshed: sessionId={}, ttl={}", sessionUUID, ttl);
         } catch (IllegalStateException e) {
             throw new SessionAuthenticationException(e.getMessage(), e.getCause());
         }

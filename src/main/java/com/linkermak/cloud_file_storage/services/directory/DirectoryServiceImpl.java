@@ -11,11 +11,13 @@ import com.linkermak.cloud_file_storage.services.path.StoragePathExtractor;
 import com.linkermak.cloud_file_storage.services.path.preparer.StoragePathPreparer;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DirectoryServiceImpl implements DirectoryService {
@@ -30,6 +32,8 @@ public class DirectoryServiceImpl implements DirectoryService {
 
     @Override
     public List<StorageResource> getDirectoryContent(String directoryPath) {
+        log.debug("Get directory content started: directoryPath={}", directoryPath);
+
         String preparedDirectoryPath = pathPreparer.prepareDirectoryPath(directoryPath);
 
         Long userId = userProvider.currentUserId();
@@ -39,12 +43,19 @@ public class DirectoryServiceImpl implements DirectoryService {
         List<StorageObjectInfo> objectInfoResources =
                 resourceStorageRepository.findByPrefix(userId, preparedDirectoryPath);
 
-        return resourceMapper.toStorageResources(objectInfoResources);
+        List<StorageResource> result = resourceMapper.toStorageResources(objectInfoResources);
+
+        log.debug("Get directory content completed: directoryPath={}, itemsCount={}",
+                preparedDirectoryPath, result.size());
+
+        return result;
     }
 
     @Override
     @Transactional
     public StorageResource createDirectory(String directoryPath) {
+        log.info("Create directory started: directoryPath={}", directoryPath);
+
         String preparedDirectoryPath = pathPreparer.prepareDirectoryPath(directoryPath);
 
         Long userId = userProvider.currentUserId();
@@ -53,7 +64,10 @@ public class DirectoryServiceImpl implements DirectoryService {
 
         resourceStorageRepository.createDirectory(userId, preparedDirectoryPath);
 
-        return resourceMapper.toDirectoryResource(preparedDirectoryPath);
+        StorageResource result = resourceMapper.toDirectoryResource(preparedDirectoryPath);
+
+        log.info("Create directory completed: directoryPath={}", preparedDirectoryPath);
+        return result;
     }
 
     private void validateCreateDirectory(Long userId, String preparedDirectoryPath) {

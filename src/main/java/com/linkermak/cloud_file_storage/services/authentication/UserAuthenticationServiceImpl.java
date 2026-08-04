@@ -6,6 +6,7 @@ import com.linkermak.cloud_file_storage.dto.web.authentication.signrequest.SignR
 import com.linkermak.cloud_file_storage.repositories.session.SessionRepository;
 import com.linkermak.cloud_file_storage.services.authentication.userdetails.UserDetailsImpl;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserAuthenticationServiceImpl implements UserAuthenticationService {
@@ -23,6 +25,8 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 
     @Override
     public LoginResult login(SignRequest request) {
+        log.info("Login attempt started: username={}", request.getUsername());
+
         Authentication unAuth = UsernamePasswordAuthenticationToken
                 .unauthenticated(request.getUsername(), request.getPassword());
 
@@ -31,6 +35,11 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
         UserSession userSession = collectUserSession((UserDetailsImpl) auth.getPrincipal());
 
         String sessionId = sessionRepository.save(userSession);
+
+        log.info("Login successful: userId={}, username={}, sessionId={}",
+                userSession.getUserId(),
+                userSession.getUsername(),
+                sessionId);
 
         return new LoginResult(
                 sessionId,
@@ -53,6 +62,10 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 
     @Override
     public void deleteSession(String sessionId) {
+        log.info("Logout started: sessionId={}", sessionId);
+
         sessionRepository.delete(sessionId);
+
+        log.info("Logout completed: sessionId={}", sessionId);
     }
 }

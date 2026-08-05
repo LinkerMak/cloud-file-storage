@@ -10,8 +10,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api")
-public class UserController {
+public class UserController implements UserApi {
 
+    @Override
     @GetMapping("/user/me")
     public ResponseEntity<UsernameResponse> showUser(
             @AuthenticationPrincipal UserDetails userDetails) {

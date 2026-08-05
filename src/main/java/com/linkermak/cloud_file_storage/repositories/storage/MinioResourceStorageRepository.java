@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Repository
-@Profile("storage")
+@Profile("!test")
 public class MinioResourceStorageRepository implements ResourceStorageRepository {
 
     private final MinioClient minioClient;

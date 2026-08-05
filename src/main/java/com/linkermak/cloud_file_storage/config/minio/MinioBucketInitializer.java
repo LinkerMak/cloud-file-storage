@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-@Profile("storage")
+@Profile("!test")
 public class MinioBucketInitializer {
 
     private final MinioClient minioClient;

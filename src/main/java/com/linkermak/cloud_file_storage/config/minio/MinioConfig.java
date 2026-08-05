@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Profile;
 
 @Configuration
 @EnableConfigurationProperties(MinioProperties.class)
-@Profile("storage")
+@Profile("!test")
 public class MinioConfig {
 
     @Bean

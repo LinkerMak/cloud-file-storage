@@ -27,7 +27,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-public class AuthController {
+public class AuthController implements AuthApi {
 
     private final UserRegisterService userRegisterService;
     private final UserAuthenticationService userAuthenticationService;
@@ -36,6 +36,7 @@ public class AuthController {
 
     private final SessionProperties sessionProperties;
 
+    @Override
     @PostMapping("/sign-up")
     public ResponseEntity<UsernameResponse> register(@Valid @RequestBody SignUpRequest signUpRequest,
                                                      HttpServletRequest servletRequest) {
@@ -54,6 +55,7 @@ public class AuthController {
                 .body(new UsernameResponse(loginResult.username()));
     }
 
+    @Override
     @PostMapping("/sign-in")
     public ResponseEntity<UsernameResponse> login(@Valid @RequestBody SignInRequest request) {
         LoginResult loginResult = userAuthenticationService.login(request);
@@ -65,6 +67,7 @@ public class AuthController {
                 .body(new UsernameResponse(loginResult.username()));
     }
 
+    @Override
     @PostMapping("/sign-out")
     public ResponseEntity<Void> logout(HttpServletRequest request) {
         String sessionId = CookieValueExtractor.

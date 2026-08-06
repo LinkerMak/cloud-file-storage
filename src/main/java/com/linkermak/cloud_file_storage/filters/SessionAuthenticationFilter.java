@@ -1,6 +1,7 @@
 package com.linkermak.cloud_file_storage.filters;
 
 import com.linkermak.cloud_file_storage.config.properties.SessionProperties;
+import com.linkermak.cloud_file_storage.config.security.SecurityPaths;
 import com.linkermak.cloud_file_storage.controllers.cookie.CookieValueExtractor;
 import com.linkermak.cloud_file_storage.dto.web.authentication.UserSession;
 import com.linkermak.cloud_file_storage.exceptions.session.SessionAuthenticationException;
@@ -31,16 +32,7 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
 
     private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
 
-    private static final List<String> PUBLIC_PATHS = List.of(
-            "/",
-            "/index.html",
-            "/config.js",
-            "/favicon.ico",
-            "/assets/**",
-            "/api/auth/sign-in",
-            "/api/auth/sign-up",
-            "/error"
-    );
+    private static final List<String> PUBLIC_PATHS = SecurityPaths.PUBLIC_PATHS;
 
     private final SessionRepository sessionRepository;
     private final SessionProperties sessionProperties;

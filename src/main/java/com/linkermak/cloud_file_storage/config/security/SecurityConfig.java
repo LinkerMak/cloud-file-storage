@@ -57,13 +57,8 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/",
-                                "/index.html",
-                                "/config.js",
-                                "/assets/**",
-                                "/favicon.ico"
+                                SecurityPaths.PUBLIC_PATHS.toArray(new String[0])
                         ).permitAll()
-                        .requestMatchers("/api/auth/sign-in", "/api/auth/sign-up").permitAll()
                         .anyRequest().authenticated()
                 );
     }

@@ -34,9 +34,14 @@ public class ResourceLoaderController implements ResourceLoaderApi {
     @GetMapping("/download")
     public ResponseEntity<Resource> downloadResource(@RequestParam("path") String path) {
         DownloadedResource downloadedResource = fileTransferService.downloadResource(path);
+
+        MediaType mediaType = downloadedResource.isZip()
+                ? MediaType.parseMediaType("application/zip")
+                : MediaType.APPLICATION_OCTET_STREAM;
+
         return ResponseEntity
                 .ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentType(mediaType)
                 .header(
                         HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition

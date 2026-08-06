@@ -5,6 +5,7 @@ import org.springframework.core.io.Resource;
 public record DownloadedResource(
         String filename,
         Resource resource,
-        long contentLength
+        long contentLength,
+        boolean isZip
 ) {
 }

@@ -73,7 +73,8 @@ public class FileTransferServiceImpl implements FileTransferService {
         DownloadedResource result = new DownloadedResource(
                 StoragePathExtractor.extractLastPath(downloadedFile.fileName()),
                 new InputStreamResource(downloadedFile.inputStream()),
-                downloadedFile.size()
+                downloadedFile.size(),
+                false
         );
 
         log.debug("Download file completed: path={}, size={}", normalizedFilePath, downloadedFile.size());
@@ -97,9 +98,10 @@ public class FileTransferServiceImpl implements FileTransferService {
                 normalizedDirectoryPath, resources.size(), zipBytes.length);
 
         return new DownloadedResource(
-                normalizedDirectoryPath,
+                normalizedDirectoryPath + ".zip",
                 new ByteArrayResource(zipBytes),
-                zipBytes.length
+                zipBytes.length,
+                true
         );
     }
 

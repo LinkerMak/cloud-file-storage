@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -70,11 +69,13 @@ public class AuthController implements AuthApi {
     @Override
     @PostMapping("/sign-out")
     public ResponseEntity<Void> logout(HttpServletRequest request) {
-        String sessionId = CookieValueExtractor.
-                extract(request, sessionProperties.getSessionCookieName())
-                .orElseThrow(() -> new AuthenticationCredentialsNotFoundException("Unauthorized"));
+        Optional<String> sessionIdOpt = CookieValueExtractor
+                .extract(request, sessionProperties.getSessionCookieName());
 
-        userAuthenticationService.deleteSession(sessionId);
+        sessionIdOpt.ifPresent(sessionId -> {
+            userAuthenticationService.deleteSession(sessionId);
+        });
+
         SecurityContextHolder.clearContext();
 
         return ResponseEntity

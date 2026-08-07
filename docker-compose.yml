@@ -41,9 +41,8 @@ services:
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
     env_file:
-      - .env.local
+      - .env
     environment:
-      SPRING_APP_NAME: ${SPRING_APP_NAME}
       SERVER_PORT: ${SERVER_PORT}
 
       DB_URL: ${DB_URL}
@@ -57,7 +56,6 @@ services:
       JPA_OPEN_IN_VIEW: ${JPA_OPEN_IN_VIEW}
 
       FLYWAY_ENABLED: ${FLYWAY_ENABLED}
-      FLYWAY_LOCATIONS: ${FLYWAY_LOCATIONS}
 
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT}
